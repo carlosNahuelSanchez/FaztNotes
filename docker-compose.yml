@@ -1,0 +1,60 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: faztnotes-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-faztnotes_db}
+      POSTGRES_USER: ${POSTGRES_USER:-faztnotes_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-faztnotes_secure_pass}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-faztnotes_admin} -d ${POSTGRES_DB:-faztnotes_db}"]
+      interval: 4s
+      timeout: 5s
+      retries: 8
+      start_period: 4s
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: faztnotes-backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-faztnotes_admin}:${POSTGRES_PASSWORD:-faztnotes_secure_pass}@db:5432/${POSTGRES_DB:-faztnotes_db}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      POSTGRES_DB: ${POSTGRES_DB:-faztnotes_db}
+      POSTGRES_USER: ${POSTGRES_USER:-faztnotes_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-faztnotes_secure_pass}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 4s
+      timeout: 5s
+      retries: 8
+      start_period: 6s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: faztnotes-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

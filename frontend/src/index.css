@@ -1,0 +1,136 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    border-radius: 0 !important;
+  }
+  
+  body {
+    background-color: #09090b;
+    color: #f4f4f5;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  code, pre, kbd, samp {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  }
+}
+
+/* Custom technical scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #121215;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #27272a;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46;
+}
+
+/* Markdown preview formatting */
+.markdown-preview h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  border-bottom: 1px solid #27272a;
+  padding-bottom: 0.5rem;
+  margin-top: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.markdown-preview h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  border-bottom: 1px solid #27272a;
+  padding-bottom: 0.25rem;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.markdown-preview h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-top: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.markdown-preview p {
+  margin-bottom: 0.75rem;
+  line-height: 1.6;
+}
+
+.markdown-preview ul, .markdown-preview ol {
+  padding-left: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.markdown-preview ul {
+  list-style-type: square;
+}
+
+.markdown-preview ol {
+  list-style-type: decimal;
+}
+
+.markdown-preview li {
+  margin-bottom: 0.25rem;
+}
+
+.markdown-preview pre {
+  background-color: #121215;
+  border: 1px solid #27272a;
+  padding: 0.75rem;
+  overflow-x: auto;
+  margin-bottom: 0.75rem;
+}
+
+.markdown-preview code {
+  background-color: #18181b;
+  padding: 0.15rem 0.35rem;
+  font-size: 0.875rem;
+  border: 1px solid #27272a;
+}
+
+.markdown-preview pre code {
+  background-color: transparent;
+  padding: 0;
+  border: none;
+}
+
+.markdown-preview blockquote {
+  border-left: 3px solid #3f3f46;
+  padding-left: 0.75rem;
+  color: #a1a1aa;
+  margin-bottom: 0.75rem;
+  font-style: italic;
+}
+
+.markdown-preview hr {
+  border: none;
+  border-top: 1px solid #27272a;
+  margin: 1rem 0;
+}
+
+.markdown-preview table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 0.75rem;
+}
+
+.markdown-preview th, .markdown-preview td {
+  border: 1px solid #27272a;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+
+.markdown-preview th {
+  background-color: #121215;
+}

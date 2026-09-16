@@ -1,0 +1,112 @@
+import React from 'react';
+import { Note } from '../types';
+
+interface NoteListProps {
+  notes: Note[];
+  selectedNoteId: string | null;
+  onSelectNote: (note: Note) => void;
+  onDeleteNote: (id: string, title: string) => void;
+  loading: boolean;
+}
+
+export const NoteList: React.FC<NoteListProps> = ({
+  notes,
+  selectedNoteId,
+  onSelectNote,
+  onDeleteNote,
+  loading
+}) => {
+  if (loading) {
+    return (
+      <div className="p-8 text-center font-mono text-fazt-600 text-xs">
+        [CARGANDO REGISTROS DESDE POSTGRESQL...]
+      </div>
+    );
+  }
+
+  if (notes.length === 0) {
+    return (
+      <div className="p-8 text-center border border-dashed border-fazt-800 text-fazt-600 font-mono text-xs">
+        [NO SE REGISTRAN NOTAS BAJO EL CRITERIO ACTUAL]
+      </div>
+    );
+  }
+
+  return (
+    <div className="divide-y divide-fazt-850 overflow-y-auto max-h-[calc(100vh-210px)]">
+      {notes.map((note) => {
+        const isSelected = selectedNoteId === note.id;
+        const formattedDate = new Date(note.updated_at).toLocaleString('es-ES', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        });
+
+        return (
+          <div
+            key={note.id}
+            onClick={() => onSelectNote(note)}
+            className={`p-3 cursor-pointer transition-colors text-xs font-mono border-l-2 ${
+              isSelected
+                ? 'bg-fazt-900 border-white text-white'
+                : 'bg-fazt-950 border-transparent text-fazt-400 hover:bg-fazt-900 hover:text-fazt-200'
+            }`}
+          >
+            <div className="flex items-start justify-between gap-2 mb-1">
+              <span className="font-bold text-sm text-fazt-100 truncate flex-1">
+                {note.title}
+              </span>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span
+                  className={`px-1 py-0.2 text-[10px] uppercase border ${
+                    note.has_embedding
+                      ? 'border-fazt-accent/40 text-fazt-accent bg-fazt-accent/10'
+                      : 'border-fazt-600 text-fazt-600 bg-fazt-900'
+                  }`}
+                >
+                  {note.has_embedding ? 'VECT' : 'SIN-VECT'}
+                </span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeleteNote(note.id, note.title);
+                  }}
+                  className="px-1.5 py-0.5 text-[10px] text-fazt-alert border border-fazt-alert/40 hover:bg-fazt-alert hover:text-black transition-colors"
+                  title="Eliminar permanentemente"
+                >
+                  DEL
+                </button>
+              </div>
+            </div>
+
+            <p className="text-fazt-400 line-clamp-2 mb-2 font-sans text-xs">
+              {note.content}
+            </p>
+
+            <div className="flex items-center justify-between text-[11px] text-fazt-600">
+              <div className="flex flex-wrap gap-1">
+                {note.tags && note.tags.length > 0 ? (
+                  note.tags.map((t) => (
+                    <span
+                      key={t}
+                      className="border border-fazt-800 bg-fazt-900 px-1 py-0.2 text-fazt-400 text-[10px]"
+                    >
+                      #{t}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-fazt-700 italic">[sin etiquetas]</span>
+                )}
+              </div>
+              <span className="text-fazt-600 shrink-0">{formattedDate}</span>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};

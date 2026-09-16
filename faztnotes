@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+set -e
+
+# Resolucion del directorio base del proyecto
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ]; do
+  DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+PROJECT_DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+
+cd "$PROJECT_DIR"
+
+if [ ! -f "$PROJECT_DIR/.env" ]; then
+  if [ -f "$PROJECT_DIR/.env.example" ]; then
+    echo "[FAZTNOTES] Archivo .env no detectado. Creando a partir de .env.example..."
+    cp "$PROJECT_DIR/.env.example" "$PROJECT_DIR/.env"
+  fi
+fi
+
+# Cargar variables para visualizacion tecnica
+if [ -f "$PROJECT_DIR/.env" ]; then
+  export $(grep -v '^#' "$PROJECT_DIR/.env" | xargs -d '\n' 2>/dev/null || true)
+fi
+
+FRONTEND_PORT="${FRONTEND_PORT:-3000}"
+BACKEND_PORT="${BACKEND_PORT:-8000}"
+POSTGRES_PORT="${POSTGRES_PORT:-5432}"
+
+case "$1" in
+  start)
+    echo "[FAZTNOTES-SYS] Iniciando servicios contenerizados..."
+    docker compose up -d --build
+
+    echo "[FAZTNOTES-SYS] Verificando salud de los servicios (healthcheck)..."
+    MAX_ATTEMPTS=30
+    ATTEMPT=1
+    BACKEND_HEALTHY=0
+
+    while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
+      STATUS=$(docker inspect --format='{{json .State.Health.Status}}' faztnotes-backend 2>/dev/null || echo "\"unknown\"")
+      if [ "$STATUS" = "\"healthy\"" ]; then
+        BACKEND_HEALTHY=1
+        break
+      fi
+      sleep 1
+      ATTEMPT=$((ATTEMPT + 1))
+    done
+
+    echo "------------------------------------------------------------"
+    if [ $BACKEND_HEALTHY -eq 1 ]; then
+      echo "[ESTADO: OPERATIVO] Todos los servicios se encuentran en ejecucion."
+    else
+      echo "[ESTADO: DEGRADADO / INICIANDO] Backend aun no reporta salud completa."
+    fi
+    echo "  - Frontend UI:    http://localhost:${FRONTEND_PORT}"
+    echo "  - Backend API:    http://localhost:${BACKEND_PORT}"
+    echo "  - Documentacion:  http://localhost:${BACKEND_PORT}/docs"
+    echo "  - Base de Datos:  localhost:${POSTGRES_PORT} (pgvector activo)"
+    echo "------------------------------------------------------------"
+    ;;
+
+  stop)
+    echo "[FAZTNOTES-SYS] Deteniendo contenedores de forma limpia..."
+    docker compose down
+    echo "[FAZTNOTES-SYS] Sistema detenido."
+    ;;
+
+  logs)
+    echo "[FAZTNOTES-SYS] Acoplando flujo de logs combinados (Ctrl+C para salir)..."
+    docker compose logs -f
+    ;;
+
+  *)
+    echo "Uso: faztnotes {start|stop|logs}"
+    exit 1
+    ;;
+esac
