@@ -72,8 +72,43 @@ case "$1" in
     docker compose logs -f
     ;;
 
+  install)
+    echo "[FAZTNOTES-SYS] Configurando alias automatico en el sistema..."
+    ALIAS_CMD="alias faztnotes=\"$PROJECT_DIR/faztnotes\""
+    CONFIGURED=0
+
+    if [ -f "$HOME/.bashrc" ]; then
+      if ! grep -Fq "alias faztnotes=" "$HOME/.bashrc"; then
+        echo "" >> "$HOME/.bashrc"
+        echo "$ALIAS_CMD" >> "$HOME/.bashrc"
+        echo "[OK] Alias registrado en $HOME/.bashrc"
+      else
+        echo "[INFO] El alias ya se encuentra registrado en $HOME/.bashrc"
+      fi
+      CONFIGURED=1
+    fi
+
+    if [ -f "$HOME/.zshrc" ]; then
+      if ! grep -Fq "alias faztnotes=" "$HOME/.zshrc"; then
+        echo "" >> "$HOME/.zshrc"
+        echo "$ALIAS_CMD" >> "$HOME/.zshrc"
+        echo "[OK] Alias registrado en $HOME/.zshrc"
+      else
+        echo "[INFO] El alias ya se encuentra registrado en $HOME/.zshrc"
+      fi
+      CONFIGURED=1
+    fi
+
+    if [ $CONFIGURED -eq 0 ]; then
+      echo "$ALIAS_CMD" >> "$HOME/.bashrc"
+      echo "[OK] Archivo $HOME/.bashrc creado con el alias registrado."
+    fi
+
+    echo "[FAZTNOTES-SYS] Alias instalado. Ejecute 'source ~/.bashrc' o abra una nueva terminal."
+    ;;
+
   *)
-    echo "Uso: faztnotes {start|stop|logs}"
+    echo "Uso: faztnotes {start|stop|logs|install}"
     exit 1
     ;;
 esac
