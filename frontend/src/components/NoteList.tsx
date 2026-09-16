@@ -1,5 +1,6 @@
 import React from 'react';
 import { Note } from '../types';
+import { useI18n } from '../i18n';
 
 interface NoteListProps {
   notes: Note[];
@@ -16,10 +17,12 @@ export const NoteList: React.FC<NoteListProps> = ({
   onDeleteNote,
   loading
 }) => {
+  const { lang, t } = useI18n();
+
   if (loading) {
     return (
       <div className="p-8 text-center font-mono text-fazt-600 text-xs">
-        [CARGANDO REGISTROS DESDE POSTGRESQL...]
+        {t.loadingRecords}
       </div>
     );
   }
@@ -27,7 +30,7 @@ export const NoteList: React.FC<NoteListProps> = ({
   if (notes.length === 0) {
     return (
       <div className="p-8 text-center border border-dashed border-fazt-800 text-fazt-600 font-mono text-xs">
-        [NO SE REGISTRAN NOTAS BAJO EL CRITERIO ACTUAL]
+        {t.noNotesFound}
       </div>
     );
   }
@@ -36,7 +39,7 @@ export const NoteList: React.FC<NoteListProps> = ({
     <div className="divide-y divide-fazt-850 overflow-y-auto max-h-[calc(100vh-210px)]">
       {notes.map((note) => {
         const isSelected = selectedNoteId === note.id;
-        const formattedDate = new Date(note.updated_at).toLocaleString('es-ES', {
+        const formattedDate = new Date(note.updated_at).toLocaleString(lang === 'es' ? 'es-ES' : 'en-US', {
           year: 'numeric',
           month: '2-digit',
           day: '2-digit',
@@ -51,6 +54,7 @@ export const NoteList: React.FC<NoteListProps> = ({
             draggable
             onDragStart={(e) => {
               e.dataTransfer.setData('text/plain', note.id);
+              e.dataTransfer.setData('application/fazt-item', JSON.stringify({ type: 'note', id: note.id }));
               e.dataTransfer.effectAllowed = 'move';
             }}
             onClick={() => onSelectNote(note)}
@@ -79,7 +83,7 @@ export const NoteList: React.FC<NoteListProps> = ({
                       : 'border-fazt-600 text-fazt-600 bg-fazt-900'
                   }`}
                 >
-                  {note.has_embedding ? 'VECT' : 'SIN-VECT'}
+                  {note.has_embedding ? t.vectStatus : t.noVectStatus}
                 </span>
                 <button
                   type="button"
@@ -88,9 +92,9 @@ export const NoteList: React.FC<NoteListProps> = ({
                     onDeleteNote(note.id, note.title);
                   }}
                   className="px-1.5 py-0.5 text-[10px] text-fazt-alert border border-fazt-alert/40 hover:bg-fazt-alert hover:text-black transition-colors"
-                  title="Eliminar permanentemente"
+                  title={t.deleteShort}
                 >
-                  DEL
+                  {t.deleteShort}
                 </button>
               </div>
             </div>
@@ -102,16 +106,16 @@ export const NoteList: React.FC<NoteListProps> = ({
             <div className="flex items-center justify-between text-[11px] text-fazt-600">
               <div className="flex flex-wrap gap-1">
                 {note.tags && note.tags.length > 0 ? (
-                  note.tags.map((t) => (
+                  note.tags.map((tag) => (
                     <span
-                      key={t}
+                      key={tag}
                       className="border border-fazt-800 bg-fazt-900 px-1 py-0.2 text-fazt-400 text-[10px]"
                     >
-                      #{t}
+                      #{tag}
                     </span>
                   ))
                 ) : (
-                  <span className="text-fazt-700 italic">[sin etiquetas]</span>
+                  <span className="text-fazt-700 italic">{t.noTags}</span>
                 )}
               </div>
               <span className="text-fazt-600 shrink-0">{formattedDate}</span>

@@ -32,7 +32,7 @@ def ask_nexo_endpoint(payload: NexoQueryRequest, db: Session = Depends(get_db)):
 
 @router.get("/stream")
 def stream_nexo_endpoint(
-    query: str = Query(..., min_length=1),
+    query: str = Query(..., min_length=1, max_length=500),
     top_k: int = Query(4, ge=1, le=20),
     db: Session = Depends(get_db)
 ):

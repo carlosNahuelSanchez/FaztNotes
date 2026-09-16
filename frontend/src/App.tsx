@@ -4,8 +4,10 @@ import { checkHealth } from './api';
 import { Header } from './components/Header';
 import { NotesManager } from './components/NotesManager';
 import { NexoConsole } from './components/NexoConsole';
+import { useI18n } from './i18n';
 
 export function App() {
+  const { t } = useI18n();
   const [activeTab, setActiveTab] = useState<'notes' | 'nexo'>('notes');
   const [health, setHealth] = useState<HealthStatus | null>(null);
   const [loadingHealth, setLoadingHealth] = useState<boolean>(true);
@@ -63,6 +65,25 @@ export function App() {
           <NexoConsole />
         )}
       </main>
+
+      <footer className="border-t border-fazt-850 bg-fazt-900 px-4 py-1.5 flex items-center justify-between font-mono text-[11px] text-fazt-500 select-none shrink-0">
+        <div className="flex items-center gap-2">
+          <span>FAZTNOTES v1.0</span>
+          <span className="text-fazt-700">│</span>
+          <span>{t.madeBy}</span>
+          <a
+            href="https://www.instagram.com/nexus.studio.dev/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-fazt-accent font-bold hover:text-emerald-300 hover:underline transition-all duration-200 tracking-wider"
+          >
+            NEXUS STUDIO
+          </a>
+        </div>
+        <div className="hidden sm:flex items-center gap-3 text-fazt-600">
+          <span>SHORTCUTS: [F1] NOTAS │ [F2] NEXO</span>
+        </div>
+      </footer>
     </div>
   );
 }

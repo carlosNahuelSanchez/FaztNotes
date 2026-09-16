@@ -1,83 +1,107 @@
-# FAZTNOTES // RAG PRIVADO DE GESTION DOCUMENTAL
+<!-- prettier-ignore -->
+<div align="center">
 
-Sistema autonomo y privado de gestion de notas tecnicas con motor RAG (Retrieval-Augmented Generation) contenerizado en Docker. Cuenta con una interfaz tecnica con estetica de consola/terminal, organizacion mediante directorios y arrastre (Drag & Drop), editor Markdown con caracteristicas de IDE y un asistente ejecutivo integrado (**Nexo**) que transmite respuestas en tiempo real fundamentadas exclusivamente en el contenido de tus notas.
+<img src="./logo.png" alt="FaztNotes Logo" height="100" />
+
+# FaztNotes
+
+*Private & Autonomous Technical Document Management and RAG System*
+
+[![Español](https://img.shields.io/badge/Language-Español-red.svg)](README.es.md)
+[![Docker Compose](https://img.shields.io/badge/Docker_Compose-24%2B-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.100%2B-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16%20%2B%20pgvector-4169E1?style=flat-square&logo=postgresql&logoColor=white)](https://github.com/pgvector/pgvector)
+[![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Google Gemini](https://img.shields.io/badge/Google_Gemini-8E7CC3?style=flat-square&logo=google&logoColor=white)](https://ai.google.dev/)
+
+[Overview](#overview) • [Architecture](#architecture) • [System Ports](#system-ports) • [Prerequisites](#prerequisites) • [Quick Start](#quick-start) • [CLI Commands](#cli-commands) • [Key Features](#key-features) • [API Reference](#api-reference) • [Project Structure](#project-structure)
+
+</div>
 
 ---
 
-## Que es y Para Que Sirve
+## Overview
 
-**FaztNotes** esta disenado para ingenieros de software, desarrolladores y administradores de sistemas que requieren centralizar y consultar su base de conocimiento tecnica sin delegar la persistencia de datos a plataformas de terceros.
+**FaztNotes** is an autonomous, self-hosted technical document management system with an integrated **Retrieval-Augmented Generation (RAG)** engine containerized via Docker.
 
-### Casos de Uso Principales
-1. **Base de Conocimiento Tecnica Privada:** Almacenamiento local y seguro de guias, configuraciones de infraestructura, comandos y arquitectura de proyectos en formato Markdown.
-2. **Motor RAG Local (Retrieval-Augmented Generation):** Cada nota creada o editada se vectoriza de forma automatica e inmediata en PostgreSQL con la extension `pgvector`.
-3. **Asistente Ejecutivo Nexo:** Consulta interactiva en lenguaje natural con streaming continuo. Nexo solo responde con informacion extraida de tus notas, citando la fuente documental exacta `[Fuente: Titulo (ID)]` y rechazando responder si el contexto no cubre la pregunta.
-4. **Organizacion Intuitiva tipo Consola:** Agrupacion por carpetas mediante arrastrar y soltar (Drag and Drop), busqueda textual instantanea y filtrado por etiquetas tecnicas.
+Designed specifically for software engineers, sysadmins, and technical leads, FaztNotes allows you to centralize, organize, and query your knowledge base privately without delegating data storage or embeddings to third-party cloud vector platforms.
+
+> [!NOTE]
+> All notes are stored locally in PostgreSQL and automatically vectorized into 768-dimensional embeddings using `pgvector`. Your data stays under your control, while AI queries are answered exclusively using text retrieved from your notes.
 
 ---
 
-## Arquitectura del Sistema
+## Architecture
 
 ```
-[ Navegador Web ]
+[ Web Browser ]
        │
-       ▼ (Puerto 3780)
+       ▼ (Port 3780)
 [ Frontend: React 18 + Nginx ]
        │
-       ▼ (Reverse Proxy interno /api/)
-[ Backend: FastAPI (Python 3.11) ] ───► [ Motor IA: Gemini API ]
+       ▼ (Internal Proxy /api/)
+[ Backend: FastAPI (Python 3.11) ] ───► [ AI Engine: Gemini API ]
        │                                (text-embedding / gemini-3.5-flash-lite)
        ▼
-[ Base de Datos: PostgreSQL 16 + pgvector ]
-  ├── notes (id, title, content, tags, folder, created_at, updated_at)
-  └── embedding (Vector 768d con indice HNSW cosine)
+[ Database: PostgreSQL 16 + pgvector ]
+   ├── notes (id, title, content, tags, folder, created_at, updated_at)
+   └── embedding (768d Vector with HNSW cosine index)
 ```
 
-- **Base de Datos y Persistencia Vectorial:** PostgreSQL 16 con extension `pgvector` activada. Soporta vectores de 768 dimensiones e indice HNSW para busquedas semanticas de alta velocidad.
-- **Backend API:** FastAPI (Python 3.11), SQLAlchemy 2.0 y streaming Server-Sent Events (SSE). Vectorizacion transaccional inmediata en cada mutacion.
-- **Frontend SPA:** React 18, TypeScript, Tailwind CSS con estetica de consola monocromatica y alta densidad de informacion, servido por Nginx con proxy inverso integrado.
-- **Orquestacion:** Docker Compose multi-contenedor.
+- **Database & Vector Storage:** PostgreSQL 16 with the `pgvector` extension. Stores 768-dimensional embeddings indexed via HNSW for high-speed cosine similarity search.
+- **Backend API:** FastAPI (Python 3.11) using SQLAlchemy 2.0 with Server-Sent Events (SSE) streaming. Handles instant vector indexing upon note creation and updates.
+- **Frontend SPA:** React 18 with TypeScript and Tailwind CSS featuring a high-density, monochrome terminal interface served by Nginx.
+- **Orchestration:** Multi-container deployment managed via Docker Compose.
 
 ---
 
-## Puertos del Sistema
+## System Ports
 
-Para evitar colisiones con entornos de desarrollo locales habituales, el sistema opera en los siguientes puertos:
+To avoid conflicts with local development environments, FaztNotes operates on the following default ports:
 
-| Servicio | URL / Puerto | Descripcion |
+| Service | Endpoint | Description |
 | :--- | :--- | :--- |
-| **Frontend UI** | `http://localhost:3780` | Panel de gestion de notas y consola Nexo |
-| **Backend API** | `http://localhost:8780` | Endpoints REST y streaming SSE |
-| **Documentacion API** | `http://localhost:8780/docs` | Interfaz interactiva Swagger / OpenAPI |
-| **PostgreSQL** | `localhost:5432` | Base de datos relacional y extension `pgvector` |
+| **Frontend UI** | `http://localhost:3780` | Technical note management UI & Nexo Console |
+| **Backend API** | `http://localhost:8780` | REST API endpoints & SSE streaming |
+| **API Documentation** | `http://localhost:8780/docs` | Interactive OpenAPI / Swagger documentation |
+| **PostgreSQL** | `localhost:5432` | Relational database & `pgvector` vector store |
+
+> [!TIP]
+> Port mappings can be customized in the `.env` file by overriding `FRONTEND_PORT`, `BACKEND_PORT`, and `POSTGRES_PORT`.
 
 ---
 
-## Requisitos Previos
+## Prerequisites
 
-- Docker Engine 24+ y Docker Compose v2+.
-- Clave de API de Google Gemini (`GEMINI_API_KEY`).
+- **Docker Engine** 24.0+ and **Docker Compose** v2.0+
+- **Google Gemini API Key** (`GEMINI_API_KEY`)
 
 ---
 
-## Instalacion y Puesta en Marcha
+## Quick Start
 
-### 1. Clonar el Repositorio
+### 1. Clone the Repository
+
 ```bash
-git clone https://github.com/tu-usuario/fazt-notes.git
-cd fazt-notes
+git clone https://github.com/carlosNahuelSanchez/FaztNotes-Personal-RAG.git
+cd FaztNotes-Personal-RAG
 ```
 
-### 2. Configurar Variables de Entorno
-Copia el archivo de configuracion base:
+### 2. Configure Environment Variables
+
+Copy the example environment configuration:
+
 ```bash
 cp .env.example .env
 ```
-*(En Windows PowerShell: `Copy-Item .env.example .env`)*
 
-Edita el archivo `.env` e ingresa tu clave de Gemini:
+*(On Windows PowerShell: `Copy-Item .env.example .env`)*
+
+Edit `.env` and set your Google Gemini API key:
+
 ```env
-GEMINI_API_KEY=tu_clave_real_de_gemini
+GEMINI_API_KEY=your_actual_gemini_api_key
 POSTGRES_DB=faztnotes_db
 POSTGRES_USER=faztnotes_admin
 POSTGRES_PASSWORD=faztnotes_secure_pass
@@ -87,98 +111,97 @@ FRONTEND_PORT=3780
 LLM_MODEL=gemini-3.5-flash-lite
 ```
 
-### 3. Registrar el Comando Global CLI (Un solo paso)
-Para ejecutar `faztnotes` desde cualquier terminal sin tener que estar dentro del directorio del proyecto:
+### 3. Install Global CLI Command
 
-- **En Windows PowerShell:**
-  ```powershell
-  .\faztnotes.ps1 install
-  ```
-- **En Linux, macOS o Git Bash:**
+Register the `faztnotes` command globally so it can be executed from any terminal directory:
+
+- **Linux / macOS / Git Bash:**
   ```bash
   ./faztnotes install
   ```
 
-Este paso detecta tu entorno y configura de forma automatica el comando en tu `$PROFILE`, `PATH` de usuario o `~/.bashrc`.
+- **Windows PowerShell:**
+  ```powershell
+  .\faztnotes.ps1 install
+  ```
 
----
+> [!IMPORTANT]
+> The installation script automatically detects your environment and appends the script location to your system `PATH` or shell profile (`~/.bashrc`, `$PROFILE`).
 
-## Comandos de Operacion (CLI)
+### 4. Start the System
 
-Una vez ejecutado el instalador, puedes operar el sistema desde cualquier directorio con los siguientes comandos:
+Run the global CLI command to build and launch all containers:
 
-### Iniciar el Sistema
-Compila las imagenes si es necesario, levanta los contenedores en segundo plano y comprueba la salud de los servicios:
 ```bash
 faztnotes start
 ```
 
-### Ver Logs en Tiempo Real
-Acopla la salida combinada de logs de la base de datos, backend y frontend:
-```bash
-faztnotes logs
-```
-
-### Detener el Sistema
-Detiene y remueve los contenedores de forma limpia conservando el volumen de datos persistente:
-```bash
-faztnotes stop
-```
+Access the Web UI at **`http://localhost:3780`**.
 
 ---
 
-## Caracteristicas de la Interfaz
+## CLI Commands
 
-### 1. Panel de Gestion de Notas
-- **Arbol de Directorios (FolderTree):** Crea carpetas tecnicas (`/backend`, `/arquitectura`, `/devops`) con el boton `+ CARPETA`.
-- **Drag & Drop:** Arrastra cualquier nota desde el listado y sueltala sobre una carpeta para moverla de ubicacion de forma inmediata sin recargar la aplicacion.
-- **Filtros Dinamicos:** Filtrado cruzado por carpeta, por etiquetas tecnicas (`#etiqueta`) y por coincidencia textual en titulo o contenido.
-- **Insignia de Vectorizacion:** Cada nota muestra el estado `[VECT]` al ser indexada en la base vectorial.
+The `faztnotes` CLI simplifies container management across Linux, macOS, and Windows:
 
-### 2. Editor de Contenido tipo IDE
-- Selector de modo: `EDICION`, `DIVIDIDO` (split view) y `VISTA PREVIA`.
-- Columna izquierda con numeracion de lineas sincronizada.
-- Resaltado de sintaxis en tiempo real:
-  - Encabezados (`#`, `##`, `###`) en verde esmeralda.
-  - Bloques de codigo y comandos en linea (`` `codigo` ``) en ambar con marco oscuro.
-  - Listas (`-`, `*`, `1.`), citas (`>`) y enlaces tecnicos resaltados.
-
-### 3. Consola Ejecutiva Nexo
-- **Streaming en Vivo (SSE):** Generacion de respuesta token por token en tiempo real.
-- **Estricta Fundamentacion Documental:** Cita obligatoria de la fuente de cada afirmacion con sintaxis `[Fuente: Titulo (ID)]`.
-- **Panel de Fuentes Consultadas:** Visualizacion de cada fragmento relevante recuperado, su extracto y su porcentaje de coincidencia semantica.
-- **Medicion de Latencia:** Cronometraje tecnico de tiempo de respuesta expresado en milisegundos (`[LATENCIA TOTAL: 312 ms]`).
-- **Control de Top-K:** Ajuste en caliente de la cantidad de fragmentos contextuales inyectados en la consulta.
+| Command | Description |
+| :--- | :--- |
+| `faztnotes start` | Builds images (if needed), starts containers in detached mode, and checks backend health |
+| `faztnotes stop` | Gracefully stops and removes containers while preserving persistent volumes |
+| `faztnotes logs` | Attaches and streams real-time combined container logs (`Ctrl+C` to exit) |
+| `faztnotes install` | Configures shell profile / system `PATH` for global CLI execution |
 
 ---
 
-## Referencia de Endpoints Principales (API REST)
+## Key Features
 
-| Metodo | Ruta | Descripcion |
+### 1. Technical Document Management
+- **Folder Tree Organization:** Create custom folder structures (`/backend`, `/architecture`, `/devops`) via the `+ FOLDER` button.
+- **Drag & Drop:** Move notes into folders seamlessly without page reloads.
+- **Dynamic Filtering:** Search notes by text, folder, or technical tags (`#tag`).
+- **Vector Index Status:** Visual `[VECT]` indicators confirm when notes are indexed in vector memory.
+
+### 2. IDE-Grade Markdown Editor
+- **3 Editing Modes:** `Edit`, `Split` (side-by-side view), and `Preview`.
+- **Synchronized Line Numbers:** Track line positions across edit and preview panels.
+- **Syntax Highlighting:** Styled code blocks, emerald headers (`#`, `##`), amber inline code, quotes, and links.
+
+### 3. Nexo AI Executive Assistant
+- **Real-Time Streaming:** Continuous Server-Sent Events (SSE) token generation.
+- **Grounded Responses:** Answers strictly using content retrieved from your notes with mandatory inline citations (`[Source: Title (ID)]`).
+- **Retrieved Context Panel:** Inspect extracted note snippets along with calculated cosine similarity scores.
+- **Latency Monitoring:** Displays total end-to-end query response time in milliseconds.
+- **Top-K Control:** Dynamically adjust the number of context chunks retrieved for generation.
+
+---
+
+## API Reference
+
+| Method | Endpoint | Description |
 | :--- | :--- | :--- |
-| `GET` | `/health` | Chequeo de estado de PostgreSQL, conexion con motor IA y total de notas |
-| `GET` | `/api/notes` | Listado ordenado de notas (soporta `search`, `tag`, `folder`) |
-| `POST` | `/api/notes` | Creacion de nota con vectorizacion inmediata en `pgvector` |
-| `PUT` | `/api/notes/{id}` | Modificacion de contenido/metadatos y regeneracion de vector |
-| `DELETE`| `/api/notes/{id}` | Eliminacion transaccional relacional y vectorial |
-| `GET` | `/api/notes/folders` | Listado de carpetas tecnicas activas |
-| `GET` | `/api/notes/tags` | Listado de etiquetas distintas registradas |
-| `GET` | `/api/nexo/stream` | Endpoint de consulta RAG con transmision en tiempo real (SSE) |
-| `POST`| `/api/nexo/query` | Endpoint sincrono de consulta RAG |
+| `GET` | `/health` | System health check (PostgreSQL status, AI engine connectivity, note count) |
+| `GET` | `/api/notes` | List notes with optional `search`, `tag`, and `folder` filters |
+| `POST` | `/api/notes` | Create a note and trigger instant `pgvector` indexing |
+| `PUT` | `/api/notes/{id}` | Update note content and regenerate vector embedding |
+| `DELETE` | `/api/notes/{id}` | Transactionally remove note content and its vector record |
+| `GET` | `/api/notes/folders` | Retrieve list of active folder paths |
+| `GET` | `/api/notes/tags` | Retrieve list of distinct tags across all notes |
+| `GET` | `/api/nexo/stream` | Stream RAG assistant responses in real-time via SSE |
+| `POST` | `/api/nexo/query` | Synchronous RAG query endpoint |
 
 ---
 
-## Estructura de Directorios
+## Project Structure
 
 ```
 fazt-notes/
-├── .env.example          # Plantilla de variables de entorno
-├── docker-compose.yml    # Orquestacion de contenedores (db, backend, frontend)
-├── faztnotes             # Script ejecutable CLI para Linux / macOS / Git Bash
-├── faztnotes.ps1         # Script ejecutable CLI para Windows PowerShell
-├── faztnotes.cmd         # Lanzador directo para Windows CMD
-├── logo.png              # Logotipo oficial del sistema
-├── backend/              # Servicio API FastAPI con pgvector y motor RAG
+├── .env.example          # Environment variables template
+├── docker-compose.yml    # Multi-container orchestration (db, backend, frontend)
+├── faztnotes             # Executable CLI script for Linux / macOS / Git Bash
+├── faztnotes.ps1         # Executable CLI script for Windows PowerShell
+├── faztnotes.cmd         # Command launcher for Windows CMD
+├── logo.png              # Official system logo
+├── backend/              # FastAPI service with pgvector & RAG pipeline
 │   ├── Dockerfile
 │   ├── requirements.txt
 │   └── app/
@@ -189,13 +212,14 @@ fazt-notes/
 │       ├── schemas.py
 │       ├── routers/
 │       └── services/
-└── frontend/             # Interfaz de usuario React + TypeScript + Nginx
+└── frontend/             # React + TypeScript SPA served by Nginx
     ├── Dockerfile
     ├── nginx.conf
     ├── package.json
     └── src/
         ├── App.tsx
         ├── api.ts
+        ├── i18n.ts
         ├── types.ts
         └── components/
             ├── FolderTree.tsx
@@ -207,9 +231,3 @@ fazt-notes/
             ├── NoteList.tsx
             └── NotesManager.tsx
 ```
-
----
-
-## Licencia
-Distribuido bajo estandares de software libre y codigo abierto para uso privado y educativo.
-"# FaztNotes-Personal-RAG" 

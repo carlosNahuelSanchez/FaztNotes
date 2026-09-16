@@ -4,10 +4,10 @@ from pydantic import BaseModel, Field, ConfigDict
 
 
 class NoteBase(BaseModel):
-    title: str = Field(..., min_length=1, max_length=255, description="Titulo de la nota")
-    content: str = Field(..., min_length=1, description="Cuerpo de la nota en formato Markdown")
+    title: str = Field(..., min_length=1, max_length=100, description="Titulo de la nota (max 100 caracteres)")
+    content: str = Field(..., min_length=1, description="Cuerpo de la nota en Markdown (sin limite de caracteres)")
     tags: List[str] = Field(default_factory=list, description="Lista de etiquetas tecnicas")
-    folder: Optional[str] = Field(None, max_length=100, description="Carpeta contenedora")
+    folder: Optional[str] = Field(None, max_length=60, description="Carpeta contenedora (max 60 caracteres)")
 
 
 class NoteCreate(NoteBase):
@@ -15,10 +15,10 @@ class NoteCreate(NoteBase):
 
 
 class NoteUpdate(BaseModel):
-    title: Optional[str] = Field(None, min_length=1, max_length=255)
+    title: Optional[str] = Field(None, min_length=1, max_length=100)
     content: Optional[str] = Field(None, min_length=1)
     tags: Optional[List[str]] = None
-    folder: Optional[str] = None
+    folder: Optional[str] = Field(None, max_length=60)
 
 
 class NoteResponse(NoteBase):
@@ -31,7 +31,7 @@ class NoteResponse(NoteBase):
 
 
 class NexoQueryRequest(BaseModel):
-    query: str = Field(..., min_length=1, max_length=1000, description="Consulta para el asistente Nexo")
+    query: str = Field(..., min_length=1, max_length=500, description="Consulta para Nexo (max 500 caracteres)")
     top_k: Optional[int] = Field(4, ge=1, le=20, description="Cantidad maxima de fragmentos a recuperar")
 
 

@@ -48,7 +48,13 @@ def list_notes(
         if folder == "__root__" or folder == "":
             stmt = stmt.where(or_(Note.folder.is_(None), Note.folder == ""))
         else:
-            stmt = stmt.where(Note.folder == folder.strip())
+            f_clean = folder.strip()
+            stmt = stmt.where(
+                or_(
+                    Note.folder == f_clean,
+                    Note.folder.like(f"{f_clean}/%")
+                )
+            )
 
     stmt = stmt.order_by(Note.updated_at.desc())
     notes = db.execute(stmt).scalars().all()

@@ -2,8 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { ChatMessage, NexoSource } from '../types';
 import { streamNexo } from '../api';
 import { MarkdownView } from './MarkdownView';
+import { useI18n } from '../i18n';
 
 export const NexoConsole: React.FC = () => {
+  const { lang, t } = useI18n();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputQuery, setInputQuery] = useState('');
   const [loading, setLoading] = useState(false);
@@ -85,7 +87,7 @@ export const NexoConsole: React.FC = () => {
               msg.id === nexoMessageId
                 ? {
                     ...msg,
-                    content: `[FALLO DE CONSULTA]: ${err.message}`,
+                    content: `[QUERY FAIL]: ${err.message}`,
                     streaming: false
                   }
                 : msg
@@ -113,16 +115,16 @@ export const NexoConsole: React.FC = () => {
       <div className="border-b border-fazt-800 bg-fazt-900 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs">
         <div className="flex items-center gap-3">
           <span className="font-bold text-fazt-100 uppercase tracking-wide">
-            CONSOLA EJECUTIVA NEXO // RAG ENGINE
+            {t.nexoConsoleTitle}
           </span>
           <span className="text-fazt-600 text-[11px] hidden sm:inline">
-            [MOTOR DE INFERENCIA: ACTIVO | MOTOR RAG: CONECTADO]
+            {t.nexoSubtitle}
           </span>
         </div>
 
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1 text-[11px]">
-            <span className="text-fazt-600">TOP-K:</span>
+            <span className="text-fazt-600">{t.topKLabel}</span>
             <select
               value={topK}
               onChange={(e) => setTopK(Number(e.target.value))}
@@ -140,7 +142,7 @@ export const NexoConsole: React.FC = () => {
             onClick={clearHistory}
             className="border border-fazt-800 px-2 py-1 text-fazt-400 hover:text-white hover:border-fazt-600 transition-colors"
           >
-            LIMPIAR SESION
+            {t.clearSession}
           </button>
         </div>
       </div>
@@ -153,26 +155,26 @@ export const NexoConsole: React.FC = () => {
               <img src="/logo.png" alt="Logo" className="h-8 w-8 object-contain border border-fazt-700 bg-black" />
               <div>
                 <div className="font-bold text-fazt-200 uppercase">
-                  NEXO // MOTOR DOCUMENTAL Y ASISTENTE
+                  {t.welcomeTitle}
                 </div>
                 <div className="text-[10px] text-fazt-600">
-                  SISTEMA DE RECUPERACION GENERATIVA Y CONSULTA
+                  {t.welcomeSubtitle}
                 </div>
               </div>
             </div>
             <div className="font-bold text-fazt-400 uppercase text-[11px]">
-              // REGLAS OPERATIVAS DEL ASISTENTE NEXO
+              {t.rulesHeader}
             </div>
-            <p>1. Nexo responde exclusivamente con informacion extraida de las notas almacenadas.</p>
-            <p>2. Cada afirmacion cita de manera precisa la fuente documental [Fuente: Titulo (ID)].</p>
-            <p>3. En ausencia de contexto relevante, declarara: 'No hay información en las notas sobre este tema.'</p>
-            <p>4. Las respuestas se transmiten en flujo continuo (streaming) en tiempo real.</p>
+            <p>{t.rule1}</p>
+            <p>{t.rule2}</p>
+            <p>{t.rule3}</p>
+            <p>{t.rule4}</p>
           </div>
         )}
 
         {messages.map((msg) => {
           const isUser = msg.role === 'user';
-          const timeStr = new Date(msg.timestamp).toLocaleTimeString('es-ES', {
+          const timeStr = new Date(msg.timestamp).toLocaleTimeString(lang === 'es' ? 'es-ES' : 'en-US', {
             hour: '2-digit',
             minute: '2-digit',
             second: '2-digit'
@@ -193,19 +195,19 @@ export const NexoConsole: React.FC = () => {
                       isUser ? 'bg-fazt-300 text-black' : 'bg-fazt-800 text-fazt-100'
                     }`}
                   >
-                    {isUser ? 'USUARIO' : 'NEXO'}
+                    {isUser ? t.userRole : t.nexoRole}
                   </span>
                   <span className="text-fazt-600">{timeStr}</span>
                   {!isUser && msg.streaming && (
                     <span className="text-emerald-400 text-[10px] animate-pulse">
-                      [TRANSMITIENDO STREAM...]
+                      {t.streamingStatus}
                     </span>
                   )}
                 </div>
 
                 {!isUser && msg.latency_ms !== undefined && (
                   <span className="text-fazt-500 text-[10px]">
-                    [LATENCIA TOTAL: {msg.latency_ms} ms]
+                    [{t.totalLatency} {msg.latency_ms} ms]
                   </span>
                 )}
               </div>
@@ -225,7 +227,7 @@ export const NexoConsole: React.FC = () => {
               {!isUser && msg.sources && msg.sources.length > 0 && (
                 <div className="mt-4 pt-3 border-t border-fazt-850">
                   <div className="text-fazt-500 text-[10px] font-bold uppercase mb-2">
-                    FUENTES RECUPERADAS ({msg.sources.length}) // RELEVANCIA DOCUMENTAL:
+                    {t.retrievedSources} ({msg.sources.length}) // {t.docRelevance}:
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     {msg.sources.map((src) => (
@@ -236,7 +238,7 @@ export const NexoConsole: React.FC = () => {
                         <div className="flex items-center justify-between text-fazt-400 font-bold mb-1">
                           <span className="truncate flex-1">{src.title}</span>
                           <span className="text-fazt-accent text-[10px] ml-2 shrink-0">
-                            {(src.similarity * 100).toFixed(1)}% RELEVANCIA
+                            {(src.similarity * 100).toFixed(1)}% {t.docRelevance}
                           </span>
                         </div>
                         <div className="text-fazt-600 text-[10px] mb-1 truncate">
@@ -258,7 +260,7 @@ export const NexoConsole: React.FC = () => {
           <div className="border border-fazt-800 bg-fazt-950 p-4 text-xs font-mono">
             <div className="flex items-center gap-2 text-fazt-400">
               <span className="inline-block w-2 h-2 bg-fazt-accent animate-pulse" />
-              <span>[NEXO INICIANDO TRANSMISION // RECUPERANDO CONTEXTO...]</span>
+              <span>{t.startingStream}</span>
             </div>
           </div>
         )}
@@ -269,21 +271,27 @@ export const NexoConsole: React.FC = () => {
       {/* Input Bar */}
       <form onSubmit={handleSubmit} className="border-t border-fazt-800 bg-fazt-900 p-3">
         <div className="flex items-center gap-2">
-          <span className="text-fazt-500 text-xs font-bold shrink-0">QUERY &gt;</span>
-          <input
-            type="text"
-            value={inputQuery}
-            onChange={(e) => setInputQuery(e.target.value)}
-            disabled={loading}
-            placeholder="Escriba su consulta tecnica para Nexo (ej: '¿Cuales son los endpoints del backend?')..."
-            className="flex-1 bg-fazt-950 border border-fazt-800 px-3 py-2 text-xs text-fazt-100 focus:outline-none focus:border-white font-mono disabled:opacity-50"
-          />
+          <span className="text-fazt-500 text-xs font-bold shrink-0">{t.queryPrefix}</span>
+          <div className="flex-1 flex flex-col">
+            <input
+              type="text"
+              maxLength={500}
+              value={inputQuery}
+              onChange={(e) => setInputQuery(e.target.value)}
+              disabled={loading}
+              placeholder={t.queryPlaceholder}
+              className="w-full bg-fazt-950 border border-fazt-800 px-3 py-2 text-xs text-fazt-100 focus:outline-none focus:border-white font-mono disabled:opacity-50"
+            />
+          </div>
+          <span className="text-fazt-500 text-[10px] font-mono shrink-0">
+            {inputQuery.length} / 500
+          </span>
           <button
             type="submit"
             disabled={loading || !inputQuery.trim()}
             className="border border-white bg-white text-black font-bold text-xs px-4 py-2 hover:bg-fazt-200 transition-colors disabled:opacity-40"
           >
-            {loading ? 'TRANSMITIENDO...' : 'CONSULTAR [ENTER]'}
+            {loading ? t.queryButtonStreaming : t.queryButton}
           </button>
         </div>
       </form>

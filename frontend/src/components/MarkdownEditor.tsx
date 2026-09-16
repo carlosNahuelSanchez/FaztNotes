@@ -4,12 +4,14 @@ interface MarkdownEditorProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  maxLength?: number;
 }
 
 export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   value,
   onChange,
-  placeholder = 'Escriba contenido en formato Markdown...'
+  placeholder = 'Escriba contenido en formato Markdown...',
+  maxLength
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const highlightRef = useRef<HTMLDivElement>(null);
@@ -59,7 +61,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
         );
       }
 
-      // Headers: #, ##, ### (verde en los símbolos y encabezado)
+      // Headers: #, ##, ###
       const headerMatch = line.match(/^(#{1,6})(\s+)(.*)$/);
       if (headerMatch) {
         const [, hashes, spaces, rest] = headerMatch;
@@ -141,10 +143,11 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           {highlightedTokens}
         </div>
 
-        {/* Real typing textarea layer (transparent text, visible caret) */}
+        {/* Real typing textarea layer */}
         <textarea
           ref={textareaRef}
           value={value}
+          maxLength={maxLength}
           onChange={(e) => onChange(e.target.value)}
           onScroll={handleScroll}
           placeholder={placeholder}

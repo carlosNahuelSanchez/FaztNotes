@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Note, NoteCreatePayload } from '../types';
 import { MarkdownView } from './MarkdownView';
 import { MarkdownEditor } from './MarkdownEditor';
+import { useI18n } from '../i18n';
 
 interface NoteEditorProps {
   note: Note | null;
-  availableFolders: string[];
+  availableFolders?: string[];
   onSave: (payload: NoteCreatePayload, id?: string) => Promise<void>;
   onCancel: () => void;
   saving: boolean;
@@ -13,15 +14,14 @@ interface NoteEditorProps {
 
 export const NoteEditor: React.FC<NoteEditorProps> = ({
   note,
-  availableFolders,
   onSave,
   onCancel,
   saving
 }) => {
+  const { t } = useI18n();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [tagsInput, setTagsInput] = useState('');
-  const [folderInput, setFolderInput] = useState('');
   const [viewMode, setViewMode] = useState<'edit' | 'preview' | 'split'>('split');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -30,31 +30,43 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
       setTitle(note.title);
       setContent(note.content);
       setTagsInput(note.tags ? note.tags.join(', ') : '');
-      setFolderInput(note.folder || '');
       setErrorMessage(null);
     } else {
       setTitle('');
       setContent('');
       setTagsInput('');
-      setFolderInput('');
       setErrorMessage(null);
     }
   }, [note]);
 
+  const handleDiscard = () => {
+    if (note) {
+      setTitle(note.title);
+      setContent(note.content);
+      setTagsInput(note.tags ? note.tags.join(', ') : '');
+    } else {
+      setTitle('');
+      setContent('');
+      setTagsInput('');
+    }
+    setErrorMessage(null);
+    onCancel();
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) {
-      setErrorMessage('El campo TITULO es obligatorio.');
+      setErrorMessage(t.titleRequired);
       return;
     }
     if (!content.trim()) {
-      setErrorMessage('El campo CONTENIDO es obligatorio.');
+      setErrorMessage(t.contentRequired);
       return;
     }
 
     const parsedTags = tagsInput
       .split(',')
-      .map((t) => t.trim())
+      .map((tag) => tag.trim())
       .filter(Boolean);
 
     try {
@@ -64,12 +76,12 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
           title: title.trim(),
           content: content.trim(),
           tags: parsedTags,
-          folder: folderInput.trim() || null
+          folder: note ? note.folder : null
         },
         note ? note.id : undefined
       );
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error desconocido al guardar';
+      const msg = err instanceof Error ? err.message : 'Save error';
       setErrorMessage(msg);
     }
   };
@@ -80,7 +92,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
       <div className="p-3 border-b border-fazt-800 bg-fazt-900 flex flex-wrap items-center justify-between gap-3 font-mono text-xs">
         <div className="flex items-center gap-2">
           <span className="font-bold text-fazt-100 uppercase">
-            {note ? `[EDITAR NOTA: ${note.id.substring(0, 8)}...]` : '[NUEVA NOTA]'}
+            {note ? `${t.editNoteTitle} ${note.id.substring(0, 8)}...]` : t.newNoteTitle}
           </span>
           {note && (
             <span
@@ -90,7 +102,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                   : 'border-fazt-600 text-fazt-500'
               }`}
             >
-              {note.has_embedding ? 'VECTORIZADA' : 'SIN VECTOR'}
+              {note.has_embedding ? t.vectorizedBadge : t.noVectorBadge}
             </span>
           )}
         </div>
@@ -104,7 +116,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                 viewMode === 'edit' ? 'bg-fazt-200 text-black font-bold' : 'text-fazt-400 hover:text-white'
               }`}
             >
-              EDICION
+              {t.modeEdit}
             </button>
             <button
               type="button"
@@ -113,7 +125,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                 viewMode === 'split' ? 'bg-fazt-200 text-black font-bold' : 'text-fazt-400 hover:text-white'
               }`}
             >
-              DIVIDIDO
+              {t.modeSplit}
             </button>
             <button
               type="button"
@@ -122,16 +134,16 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                 viewMode === 'preview' ? 'bg-fazt-200 text-black font-bold' : 'text-fazt-400 hover:text-white'
               }`}
             >
-              VISTA PREVIA
+              {t.modePreview}
             </button>
           </div>
 
           <button
             type="button"
-            onClick={onCancel}
+            onClick={handleDiscard}
             className="border border-fazt-700 px-3 py-1 text-fazt-400 hover:text-white hover:border-fazt-500"
           >
-            DESCARTAR
+            {t.discard}
           </button>
 
           <button
@@ -139,7 +151,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
             disabled={saving}
             className="border border-fazt-accent bg-fazt-accent text-black font-bold px-3 py-1 hover:bg-emerald-400 disabled:opacity-50"
           >
-            {saving ? '[GUARDANDO Y VECTORIZANDO...]' : '[GUARDAR NOTA]'}
+            {saving ? t.savingNote : t.saveNote}
           </button>
         </div>
       </div>
@@ -153,52 +165,41 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
       {/* Metadata inputs */}
       <div className="p-3 border-b border-fazt-850 space-y-2 bg-fazt-900/50">
         <div>
-          <label className="block font-mono text-[11px] text-fazt-600 uppercase mb-1">
-            TITULO DEL DOCUMENTO:
-          </label>
+          <div className="flex justify-between items-center mb-1 font-mono text-[11px]">
+            <label className="text-fazt-600 uppercase">
+              {t.docTitleLabel}
+            </label>
+            <span className="text-fazt-500 text-[10px] font-mono">
+              {title.length} / 100
+            </span>
+          </div>
           <input
             type="text"
+            maxLength={100}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Ejemplo: Arquitectura de Pipelines RAG"
+            placeholder={t.docTitlePlaceholder}
             className="w-full bg-fazt-950 border border-fazt-800 px-3 py-1.5 text-sm text-fazt-100 focus:outline-none focus:border-white font-mono"
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-          <div>
-            <label className="block font-mono text-[11px] text-fazt-600 uppercase mb-1">
-              ETIQUETAS TECNICAS (SEPARADAS POR COMA):
+        <div>
+          <div className="flex justify-between items-center mb-1 font-mono text-[11px]">
+            <label className="text-fazt-600 uppercase">
+              {t.tagsInputLabel}
             </label>
-            <input
-              type="text"
-              value={tagsInput}
-              onChange={(e) => setTagsInput(e.target.value)}
-              placeholder="backend, postgres, rag"
-              className="w-full bg-fazt-950 border border-fazt-800 px-3 py-1 text-xs text-fazt-200 focus:outline-none focus:border-white font-mono"
-            />
+            <span className="text-fazt-500 text-[10px] font-mono">
+              {tagsInput.length} / 150
+            </span>
           </div>
-
-          <div>
-            <label className="block font-mono text-[11px] text-fazt-600 uppercase mb-1">
-              CARPETA / DIRECTORIO:
-            </label>
-            <div className="flex items-center gap-1">
-              <input
-                type="text"
-                list="folders-list"
-                value={folderInput}
-                onChange={(e) => setFolderInput(e.target.value)}
-                placeholder="Raiz (o escribe una nueva carpeta)"
-                className="w-full bg-fazt-950 border border-fazt-800 px-3 py-1 text-xs text-fazt-200 focus:outline-none focus:border-white font-mono"
-              />
-              <datalist id="folders-list">
-                {availableFolders.map((f) => (
-                  <option key={f} value={f} />
-                ))}
-              </datalist>
-            </div>
-          </div>
+          <input
+            type="text"
+            maxLength={150}
+            value={tagsInput}
+            onChange={(e) => setTagsInput(e.target.value)}
+            placeholder="backend, postgres, rag"
+            className="w-full bg-fazt-950 border border-fazt-800 px-3 py-1 text-xs text-fazt-200 focus:outline-none focus:border-white font-mono"
+          />
         </div>
       </div>
 
@@ -206,13 +207,16 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
       <div className="flex-1 flex overflow-hidden">
         {(viewMode === 'edit' || viewMode === 'split') && (
           <div className={`flex flex-col ${viewMode === 'split' ? 'w-1/2 border-r border-fazt-800' : 'w-full'}`}>
-            <div className="bg-fazt-900 px-3 py-1 border-b border-fazt-850 font-mono text-[10px] text-fazt-600 uppercase">
-              CONTENIDO (MARKDOWN)
+            <div className="bg-fazt-900 px-3 py-1 border-b border-fazt-850 font-mono text-[10px] text-fazt-600 uppercase flex justify-between items-center">
+              <span>{t.contentHeader}</span>
+              <span className="text-fazt-500 text-[10px] font-mono">
+                {content.length} CHARS (UNLIMITED)
+              </span>
             </div>
             <MarkdownEditor
               value={content}
               onChange={setContent}
-              placeholder="Escriba el cuerpo en Markdown. Use # para encabezados, `codigo`, etc."
+              placeholder={t.editorPlaceholder}
             />
           </div>
         )}
@@ -220,14 +224,14 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
         {(viewMode === 'preview' || viewMode === 'split') && (
           <div className={`flex flex-col ${viewMode === 'split' ? 'w-1/2' : 'w-full'} bg-fazt-950`}>
             <div className="bg-fazt-900 px-3 py-1 border-b border-fazt-850 font-mono text-[10px] text-fazt-600 uppercase">
-              RENDERIZADO TECNICO
+              {t.previewHeader}
             </div>
             <div className="p-4 flex-1 overflow-y-auto">
               {content.trim() ? (
                 <MarkdownView content={content} />
               ) : (
                 <span className="font-mono text-xs text-fazt-700 italic">
-                  [Sin contenido para previsualizar]
+                  {t.noPreviewContent}
                 </span>
               )}
             </div>
@@ -237,8 +241,8 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
 
       {/* Footer info */}
       <div className="px-3 py-1.5 border-t border-fazt-800 bg-fazt-900 flex justify-between items-center font-mono text-[11px] text-fazt-600">
-        <span>LONGITUD: {content.length} BYTES</span>
-        <span>LINEAS: {content ? content.split('\n').length : 0}</span>
+        <span>{t.bytesLength} {content.length} BYTES</span>
+        <span>{t.linesCount} {content ? content.split('\n').length : 0} | CHARS: {content.length}</span>
       </div>
     </form>
   );
