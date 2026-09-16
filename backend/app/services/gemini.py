@@ -26,49 +26,53 @@ class GeminiService:
     def is_configured(self) -> bool:
         return self.configured and bool(self.api_key)
 
-    def generate_embedding(self, text: str) -> List[float]:
+    def _embed_text(self, text: str, task_type: str) -> List[float]:
         if not self.is_configured():
             raise RuntimeError(
                 "GEMINI_API_KEY no configurada en el entorno. No es posible generar embeddings."
             )
 
-        clean_text = text.strip()
-        if not clean_text:
-            clean_text = "nota vacia"
+        clean_text = text.strip() or "nota vacia"
+        models_to_try = [
+            settings.embedding_model,
+            "models/gemini-embedding-001",
+            "models/gemini-embedding-2",
+            "models/text-embedding-004"
+        ]
+        unique_models = []
+        for m in models_to_try:
+            if m not in unique_models:
+                unique_models.append(m)
 
-        try:
-            result = genai.embed_content(
-                model=settings.embedding_model,
-                content=clean_text,
-                task_type="retrieval_document"
-            )
-            embedding = result.get("embedding")
-            if not embedding:
-                raise ValueError("Respuesta de embedding vacia recibida de Gemini.")
-            return embedding
-        except Exception as exc:
-            logger.error(f"[FAZTNOTES-GEMINI] Fallo al generar embedding: {exc}")
-            raise RuntimeError(f"Error al generar embedding con Gemini: {str(exc)}") from exc
+        last_error = None
+        for model_name in unique_models:
+            try:
+                params = {
+                    "model": model_name,
+                    "content": clean_text,
+                    "task_type": task_type
+                }
+                if "gemini-embedding" in model_name:
+                    params["output_dimensionality"] = 768
+
+                result = genai.embed_content(**params)
+                embedding = result.get("embedding")
+                if embedding and len(embedding) == 768:
+                    return embedding
+                elif embedding:
+                    return embedding[:768]
+            except Exception as exc:
+                last_error = exc
+                continue
+
+        logger.error(f"[FAZTNOTES-GEMINI] Fallo al generar embedding con todos los modelos: {last_error}")
+        raise RuntimeError(f"Error al generar embedding con Gemini: {str(last_error)}") from last_error
+
+    def generate_embedding(self, text: str) -> List[float]:
+        return self._embed_text(text, task_type="retrieval_document")
 
     def generate_query_embedding(self, query: str) -> List[float]:
-        if not self.is_configured():
-            raise RuntimeError(
-                "GEMINI_API_KEY no configurada en el entorno. No es posible generar embedding de consulta."
-            )
-
-        try:
-            result = genai.embed_content(
-                model=settings.embedding_model,
-                content=query.strip(),
-                task_type="retrieval_query"
-            )
-            embedding = result.get("embedding")
-            if not embedding:
-                raise ValueError("Respuesta de embedding vacia recibida de Gemini.")
-            return embedding
-        except Exception as exc:
-            logger.error(f"[FAZTNOTES-GEMINI] Fallo al generar query embedding: {exc}")
-            raise RuntimeError(f"Error al generar query embedding con Gemini: {str(exc)}") from exc
+        return self._embed_text(query, task_type="retrieval_query")
 
     def generate_nexo_response(self, query: str, context: str) -> str:
         if not self.is_configured():

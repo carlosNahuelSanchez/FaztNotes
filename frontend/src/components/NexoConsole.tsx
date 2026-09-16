@@ -69,7 +69,7 @@ export const NexoConsole: React.FC = () => {
             CONSOLA EJECUTIVA NEXO // RAG ENGINE
           </span>
           <span className="text-fazt-600 text-[11px] hidden sm:inline">
-            [MODELO: GEMINI FLASH | SIMILITUD COSENO: PGVECTOR]
+            [MODELO: GEMINI 3.5 FLASH LITE | SIMILITUD COSENO: PGVECTOR]
           </span>
         </div>
 

@@ -32,6 +32,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-faztnotes_secure_pass}
       POSTGRES_HOST: db
       POSTGRES_PORT: 5432
+      LLM_MODEL: ${LLM_MODEL:-gemini-3.5-flash-lite}
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     depends_on:

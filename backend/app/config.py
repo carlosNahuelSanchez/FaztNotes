@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     database_url: str = ""
     rag_top_k: int = 4
     embedding_model: str = "models/text-embedding-004"
-    llm_model: str = "gemini-1.5-flash"
+    llm_model: str = "gemini-3.5-flash-lite"
 
     model_config = SettingsConfigDict(
         env_file=".env",
