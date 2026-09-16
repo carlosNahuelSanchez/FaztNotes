@@ -149,7 +149,18 @@ export const NexoConsole: React.FC = () => {
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 && (
           <div className="border border-fazt-850 bg-fazt-900/30 p-6 text-fazt-500 text-xs max-w-2xl mx-auto space-y-2">
-            <div className="font-bold text-fazt-300 uppercase">
+            <div className="flex items-center gap-3 border-b border-fazt-850 pb-3 mb-3">
+              <img src="/logo.png" alt="Logo" className="h-8 w-8 object-contain border border-fazt-700 bg-black" />
+              <div>
+                <div className="font-bold text-fazt-200 uppercase">
+                  NEXO // MOTOR DOCUMENTAL Y ASISTENTE
+                </div>
+                <div className="text-[10px] text-fazt-600">
+                  SISTEMA DE RECUPERACION GENERATIVA Y CONSULTA
+                </div>
+              </div>
+            </div>
+            <div className="font-bold text-fazt-400 uppercase text-[11px]">
               // REGLAS OPERATIVAS DEL ASISTENTE NEXO
             </div>
             <p>1. Nexo responde exclusivamente con informacion extraida de las notas almacenadas.</p>

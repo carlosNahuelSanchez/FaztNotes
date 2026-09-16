@@ -20,7 +20,8 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="border-b border-fazt-800 bg-fazt-900 px-4 py-3 flex flex-wrap items-center justify-between gap-4 font-mono text-xs select-none">
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
+          <img src="/logo.png" alt="Logo" className="h-6 w-6 object-contain border border-fazt-700 bg-black" />
           <span className="bg-white text-black px-2 py-0.5 font-bold tracking-widest text-sm">
             FAZTNOTES
           </span>
