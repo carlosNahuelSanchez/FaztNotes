@@ -118,5 +118,53 @@ class GeminiService:
             logger.error(f"[FAZTNOTES-GEMINI] Fallo al invocar modelo Nexo: {exc}")
             raise RuntimeError(f"Error al ejecutar inferencia con Nexo: {str(exc)}") from exc
 
+    def generate_nexo_stream(self, query: str, context: str):
+        if not self.is_configured():
+            yield "Error operativo: Motor de IA no configurado en el entorno."
+            return
+
+        system_instruction = (
+            "Eres Nexo, el asistente ejecutivo del sistema FaztNotes. "
+            "Tu personalidad es puramente ejecutiva, objetiva y estricta.\n"
+            "Reglas operativas mandatorias:\n"
+            "1. Responde exclusivamente utilizando el contexto recuperado de las notas provistas.\n"
+            "2. Si el contexto provisto no contiene la informacion necesaria para responder la pregunta, "
+            "debes declarar de forma exacta y explicita: 'No hay información en las notas sobre este tema.'\n"
+            "3. Debes citar obligatoriamente el titulo o ID de la nota fuente de cada afirmacion "
+            "utilizando el formato: [Fuente: Titulo (ID)].\n"
+            "4. Cero emojis en toda la respuesta bajo cualquier circunstancia.\n"
+            "5. Cero AI Slop: Sin saludos condescendientes, sin introducciones decorativas, "
+            "sin florituras linguisticas y sin despedidas. Ve directo a los hechos tecnicos con alta densidad informativa."
+        )
+
+        user_prompt = (
+            f"CONTEXTO DE NOTAS RECUPERADAS:\n{context}\n\n"
+            f"CONSULTA DEL USUARIO:\n{query}"
+        )
+
+        try:
+            model = genai.GenerativeModel(
+                model_name=settings.llm_model,
+                system_instruction=system_instruction
+            )
+            response = model.generate_content(
+                user_prompt,
+                stream=True,
+                generation_config=genai.types.GenerationConfig(
+                    temperature=0.1,
+                    max_output_tokens=1024,
+                )
+            )
+            has_output = False
+            for chunk in response:
+                if chunk and chunk.text:
+                    has_output = True
+                    yield chunk.text
+            if not has_output:
+                yield "No hay información en las notas sobre este tema."
+        except Exception as exc:
+            logger.error(f"[FAZTNOTES-GEMINI] Error en stream Nexo: {exc}")
+            yield f"Error al ejecutar inferencia con Nexo: {str(exc)}"
+
 
 gemini_service = GeminiService()

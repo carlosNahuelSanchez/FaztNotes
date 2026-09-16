@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ChatMessage } from '../types';
-import { queryNexo } from '../api';
+import { ChatMessage, NexoSource } from '../types';
+import { streamNexo } from '../api';
 import { MarkdownView } from './MarkdownView';
 
 export const NexoConsole: React.FC = () => {
@@ -9,12 +9,21 @@ export const NexoConsole: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [topK, setTopK] = useState(4);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const abortStreamRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  useEffect(() => {
+    return () => {
+      if (abortStreamRef.current) {
+        abortStreamRef.current();
+      }
+    };
+  }, []);
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const cleanQuery = inputQuery.trim();
     if (!cleanQuery || loading) return;
@@ -26,38 +35,76 @@ export const NexoConsole: React.FC = () => {
       timestamp: new Date().toISOString()
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    const nexoMessageId = crypto.randomUUID();
+    const initialNexoMessage: ChatMessage = {
+      id: nexoMessageId,
+      role: 'nexo',
+      content: '',
+      timestamp: new Date().toISOString(),
+      sources: [],
+      streaming: true
+    };
+
+    setMessages((prev) => [...prev, userMessage, initialNexoMessage]);
     setInputQuery('');
     setLoading(true);
 
-    try {
-      const response = await queryNexo(cleanQuery, topK);
-      const nexoMessage: ChatMessage = {
-        id: crypto.randomUUID(),
-        role: 'nexo',
-        content: response.answer,
-        timestamp: new Date().toISOString(),
-        sources: response.sources,
-        latency_ms: response.latency_ms
-      };
-      setMessages((prev) => [...prev, nexoMessage]);
-    } catch (err: unknown) {
-      const errorText = err instanceof Error ? err.message : 'Error desconocido de comunicacion con Nexo';
-      const errorMessage: ChatMessage = {
-        id: crypto.randomUUID(),
-        role: 'nexo',
-        content: `[FALLO DE CONSULTA]: ${errorText}`,
-        timestamp: new Date().toISOString(),
-        sources: []
-      };
-      setMessages((prev) => [...prev, errorMessage]);
-    } finally {
-      setLoading(false);
-    }
+    const cancelStream = streamNexo(
+      cleanQuery,
+      topK,
+      {
+        onSources: (sources: NexoSource[]) => {
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === nexoMessageId ? { ...msg, sources } : msg
+            )
+          );
+        },
+        onChunk: (chunkText: string) => {
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === nexoMessageId
+                ? { ...msg, content: msg.content + chunkText }
+                : msg
+            )
+          );
+        },
+        onDone: (latency_ms: number) => {
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === nexoMessageId
+                ? { ...msg, latency_ms, streaming: false }
+                : msg
+            )
+          );
+          setLoading(false);
+        },
+        onError: (err: Error) => {
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === nexoMessageId
+                ? {
+                    ...msg,
+                    content: `[FALLO DE CONSULTA]: ${err.message}`,
+                    streaming: false
+                  }
+                : msg
+            )
+          );
+          setLoading(false);
+        }
+      }
+    );
+
+    abortStreamRef.current = cancelStream;
   };
 
   const clearHistory = () => {
+    if (abortStreamRef.current) {
+      abortStreamRef.current();
+    }
     setMessages([]);
+    setLoading(false);
   };
 
   return (
@@ -69,7 +116,7 @@ export const NexoConsole: React.FC = () => {
             CONSOLA EJECUTIVA NEXO // RAG ENGINE
           </span>
           <span className="text-fazt-600 text-[11px] hidden sm:inline">
-            [MODELO: GEMINI 3.5 FLASH LITE | SIMILITUD COSENO: PGVECTOR]
+            [MOTOR DE INFERENCIA: ACTIVO | MOTOR RAG: CONECTADO]
           </span>
         </div>
 
@@ -108,7 +155,7 @@ export const NexoConsole: React.FC = () => {
             <p>1. Nexo responde exclusivamente con informacion extraida de las notas almacenadas.</p>
             <p>2. Cada afirmacion cita de manera precisa la fuente documental [Fuente: Titulo (ID)].</p>
             <p>3. En ausencia de contexto relevante, declarara: 'No hay información en las notas sobre este tema.'</p>
-            <p>4. Ingrese una consulta tecnica en la barra inferior para ejecutar la busqueda vectorial.</p>
+            <p>4. Las respuestas se transmiten en flujo continuo (streaming) en tiempo real.</p>
           </div>
         )}
 
@@ -138,11 +185,16 @@ export const NexoConsole: React.FC = () => {
                     {isUser ? 'USUARIO' : 'NEXO'}
                   </span>
                   <span className="text-fazt-600">{timeStr}</span>
+                  {!isUser && msg.streaming && (
+                    <span className="text-emerald-400 text-[10px] animate-pulse">
+                      [TRANSMITIENDO STREAM...]
+                    </span>
+                  )}
                 </div>
 
                 {!isUser && msg.latency_ms !== undefined && (
                   <span className="text-fazt-500 text-[10px]">
-                    [LATENCIA: {msg.latency_ms} ms]
+                    [LATENCIA TOTAL: {msg.latency_ms} ms]
                   </span>
                 )}
               </div>
@@ -151,8 +203,10 @@ export const NexoConsole: React.FC = () => {
               <div className="text-fazt-200 font-sans leading-relaxed">
                 {isUser ? (
                   <p className="font-mono text-xs text-fazt-100 whitespace-pre-wrap">{msg.content}</p>
-                ) : (
+                ) : msg.content ? (
                   <MarkdownView content={msg.content} />
+                ) : (
+                  <span className="inline-block w-2 h-4 bg-emerald-400 animate-pulse" />
                 )}
               </div>
 
@@ -160,7 +214,7 @@ export const NexoConsole: React.FC = () => {
               {!isUser && msg.sources && msg.sources.length > 0 && (
                 <div className="mt-4 pt-3 border-t border-fazt-850">
                   <div className="text-fazt-500 text-[10px] font-bold uppercase mb-2">
-                    FUENTES RECUPERADAS ({msg.sources.length}) // BUSQUEDA POR COSENO:
+                    FUENTES RECUPERADAS ({msg.sources.length}) // RELEVANCIA DOCUMENTAL:
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     {msg.sources.map((src) => (
@@ -171,7 +225,7 @@ export const NexoConsole: React.FC = () => {
                         <div className="flex items-center justify-between text-fazt-400 font-bold mb-1">
                           <span className="truncate flex-1">{src.title}</span>
                           <span className="text-fazt-accent text-[10px] ml-2 shrink-0">
-                            {(src.similarity * 100).toFixed(1)}% SIM
+                            {(src.similarity * 100).toFixed(1)}% RELEVANCIA
                           </span>
                         </div>
                         <div className="text-fazt-600 text-[10px] mb-1 truncate">
@@ -189,11 +243,11 @@ export const NexoConsole: React.FC = () => {
           );
         })}
 
-        {loading && (
+        {loading && messages[messages.length - 1]?.role === 'user' && (
           <div className="border border-fazt-800 bg-fazt-950 p-4 text-xs font-mono">
             <div className="flex items-center gap-2 text-fazt-400">
               <span className="inline-block w-2 h-2 bg-fazt-accent animate-pulse" />
-              <span>[NEXO PROCESANDO CONSULTA // EXTRACCION VECTORIAL EN CURSO...]</span>
+              <span>[NEXO INICIANDO TRANSMISION // RECUPERANDO CONTEXTO...]</span>
             </div>
           </div>
         )}
@@ -218,7 +272,7 @@ export const NexoConsole: React.FC = () => {
             disabled={loading || !inputQuery.trim()}
             className="border border-white bg-white text-black font-bold text-xs px-4 py-2 hover:bg-fazt-200 transition-colors disabled:opacity-40"
           >
-            {loading ? 'BUSCANDO...' : 'CONSULTAR [ENTER]'}
+            {loading ? 'TRANSMITIENDO...' : 'CONSULTAR [ENTER]'}
           </button>
         </div>
       </form>

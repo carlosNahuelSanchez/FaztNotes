@@ -62,6 +62,16 @@ def init_db(max_retries: int = 15, delay_seconds: int = 2) -> None:
                 "ON notes USING hnsw (embedding vector_cosine_ops);"
             )
         )
+        conn.execute(
+            text(
+                "ALTER TABLE notes ADD COLUMN IF NOT EXISTS folder VARCHAR(100);"
+            )
+        )
+        conn.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS idx_notes_folder ON notes(folder);"
+            )
+        )
         conn.commit()
 
     logger.info("[FAZTNOTES-DB] Inicializacion de base de datos relacional y vectorial completada.")

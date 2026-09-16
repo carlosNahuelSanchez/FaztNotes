@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Note, NoteCreatePayload } from '../types';
-import { fetchNotes, fetchTags, createNote, updateNote, deleteNote } from '../api';
+import { fetchNotes, fetchTags, fetchFolders, createNote, updateNote, deleteNote } from '../api';
 import { NoteList } from './NoteList';
 import { NoteEditor } from './NoteEditor';
+import { FolderTree } from './FolderTree';
 
 interface NotesManagerProps {
   onDataChanged: () => void;
@@ -11,7 +12,9 @@ interface NotesManagerProps {
 export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => {
   const [notes, setNotes] = useState<Note[]>([]);
   const [tags, setTags] = useState<string[]>([]);
+  const [folders, setFolders] = useState<string[]>([]);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [loading, setLoading] = useState(true);
@@ -22,14 +25,15 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const [notesData, tagsData] = await Promise.all([
-        fetchNotes(searchQuery, selectedTag || undefined),
-        fetchTags()
+      const [notesData, tagsData, foldersData] = await Promise.all([
+        fetchNotes(searchQuery, selectedTag || undefined, selectedFolder || undefined),
+        fetchTags(),
+        fetchFolders()
       ]);
       setNotes(notesData);
       setTags(tagsData);
+      setFolders(foldersData);
 
-      // Si la nota seleccionada se actualizo, reflejarla
       if (selectedNote) {
         const found = notesData.find((n) => n.id === selectedNote.id);
         if (found) setSelectedNote(found);
@@ -40,11 +44,11 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, selectedTag, selectedNote]);
+  }, [searchQuery, selectedTag, selectedFolder, selectedNote]);
 
   useEffect(() => {
     loadData();
-  }, [selectedTag, searchQuery]);
+  }, [selectedTag, selectedFolder, searchQuery]);
 
   const handleSaveNote = async (payload: NoteCreatePayload, id?: string) => {
     setSaving(true);
@@ -52,11 +56,11 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
     try {
       if (id) {
         const updated = await updateNote(id, payload);
-        setStatusMessage(`[OK] Nota '${updated.title}' actualizada e indexada en pgvector.`);
+        setStatusMessage(`[OK] Nota '${updated.title}' guardada y vectorizada.`);
         setSelectedNote(updated);
       } else {
         const created = await createNote(payload);
-        setStatusMessage(`[OK] Nota '${created.title}' creada e indexada en pgvector.`);
+        setStatusMessage(`[OK] Nota '${created.title}' creada y vectorizada.`);
         setSelectedNote(created);
       }
       await loadData();
@@ -67,6 +71,27 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
       throw err;
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDropNoteOnFolder = async (noteId: string, folderTarget: string | null) => {
+    try {
+      const targetDisplay = folderTarget ? `/${folderTarget}` : 'raiz';
+      await updateNote(noteId, { folder: folderTarget });
+      setStatusMessage(`[SISTEMA] Nota transferida exitosamente a: ${targetDisplay}`);
+      await loadData();
+      onDataChanged();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al mover nota';
+      setStatusMessage(`[FALLO] ${msg}`);
+    }
+  };
+
+  const handleCreateFolder = (newFolder: string) => {
+    if (!folders.includes(newFolder)) {
+      setFolders((prev) => [...prev, newFolder].sort());
+      setSelectedFolder(newFolder);
+      setStatusMessage(`[SISTEMA] Carpeta /${newFolder} creada. Puede arrastrar notas hacia ella.`);
     }
   };
 
@@ -97,7 +122,7 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Buscar por coincidencia en titulo o contenido..."
+            placeholder="Buscar en titulo o contenido..."
             className="w-full bg-fazt-950 border border-fazt-800 px-2 py-1 text-fazt-200 focus:outline-none focus:border-white font-mono text-xs"
           />
         </div>
@@ -126,7 +151,7 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
                 : 'border-fazt-800 text-fazt-400 hover:text-white'
             }`}
           >
-            TODAS ({notes.length})
+            TODAS
           </button>
           {tags.map((t) => (
             <button
@@ -152,13 +177,25 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
         </div>
       )}
 
-      {/* Main Dual Panel */}
+      {/* Main 3-Column Panel */}
       <div className="flex-1 grid grid-cols-1 md:grid-cols-12 overflow-hidden">
-        {/* Left: Notes List (5 cols) */}
-        <div className="md:col-span-5 border-r border-fazt-800 flex flex-col bg-fazt-950 overflow-hidden">
+        {/* Col 1: Folders Sidebar (2 cols) */}
+        <div className="md:col-span-2 overflow-hidden flex flex-col bg-fazt-950">
+          <FolderTree
+            folders={folders}
+            selectedFolder={selectedFolder}
+            onSelectFolder={setSelectedFolder}
+            onCreateFolder={handleCreateFolder}
+            onDropNoteOnFolder={handleDropNoteOnFolder}
+            totalNotesCount={notes.length}
+          />
+        </div>
+
+        {/* Col 2: Notes List (4 cols) */}
+        <div className="md:col-span-4 border-r border-fazt-800 flex flex-col bg-fazt-950 overflow-hidden">
           <div className="bg-fazt-900 px-3 py-1.5 border-b border-fazt-850 flex justify-between items-center font-mono text-[11px] text-fazt-500">
-            <span>REGISTROS ENCONTRADOS: {notes.length}</span>
-            <span>ORDEN: RECIENTES</span>
+            <span>REGISTROS: {notes.length}</span>
+            <span className="text-[10px] text-zinc-500">ARRASTRE A CARPETA</span>
           </div>
           <NoteList
             notes={notes}
@@ -169,10 +206,11 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
           />
         </div>
 
-        {/* Right: Editor (7 cols) */}
-        <div className="md:col-span-7 flex flex-col bg-fazt-950 overflow-hidden">
+        {/* Col 3: Editor (6 cols) */}
+        <div className="md:col-span-6 flex flex-col bg-fazt-950 overflow-hidden">
           <NoteEditor
             note={selectedNote}
+            availableFolders={folders}
             onSave={handleSaveNote}
             onCancel={() => setSelectedNote(null)}
             saving={saving}
@@ -188,7 +226,7 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
               [CONFIRMACION DE ELIMINACION PERMANENTE]
             </div>
             <div className="text-xs text-fazt-200 mb-4 space-y-2">
-              <p>ADVERTENCIA: Esta operacion eliminara de forma irreversible el registro relacional y su vector en pgvector.</p>
+              <p>ADVERTENCIA: Esta operacion eliminara de forma irreversible el registro de la base de datos.</p>
               <div className="bg-fazt-950 p-2 border border-fazt-800">
                 <div><span className="text-fazt-600">ID:</span> {deleteConfirm.id}</div>
                 <div><span className="text-fazt-600">TITULO:</span> {deleteConfirm.title}</div>

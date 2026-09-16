@@ -7,6 +7,7 @@ class NoteBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=255, description="Titulo de la nota")
     content: str = Field(..., min_length=1, description="Cuerpo de la nota en formato Markdown")
     tags: List[str] = Field(default_factory=list, description="Lista de etiquetas tecnicas")
+    folder: Optional[str] = Field(None, max_length=100, description="Carpeta contenedora")
 
 
 class NoteCreate(NoteBase):
@@ -17,6 +18,7 @@ class NoteUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=1, max_length=255)
     content: Optional[str] = Field(None, min_length=1)
     tags: Optional[List[str]] = None
+    folder: Optional[str] = None
 
 
 class NoteResponse(NoteBase):

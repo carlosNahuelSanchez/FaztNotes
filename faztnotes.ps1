@@ -43,9 +43,9 @@ switch ($Action) {
         } else {
             Write-Host "[ESTADO: INICIANDO] Backend aun completando verificacion."
         }
-        Write-Host "  - Frontend UI:    http://localhost:3000"
-        Write-Host "  - Backend API:    http://localhost:8000"
-        Write-Host "  - Documentacion:  http://localhost:8000/docs"
+        Write-Host "  - Frontend UI:    http://localhost:3780"
+        Write-Host "  - Backend API:    http://localhost:8780"
+        Write-Host "  - Documentacion:  http://localhost:8780/docs"
         Write-Host "  - Base de Datos:  localhost:5432 (pgvector activo)"
         Write-Host "------------------------------------------------------------"
     }

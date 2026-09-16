@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Note, NoteCreatePayload } from '../types';
 import { MarkdownView } from './MarkdownView';
+import { MarkdownEditor } from './MarkdownEditor';
 
 interface NoteEditorProps {
   note: Note | null;
+  availableFolders: string[];
   onSave: (payload: NoteCreatePayload, id?: string) => Promise<void>;
   onCancel: () => void;
   saving: boolean;
@@ -11,6 +13,7 @@ interface NoteEditorProps {
 
 export const NoteEditor: React.FC<NoteEditorProps> = ({
   note,
+  availableFolders,
   onSave,
   onCancel,
   saving
@@ -18,6 +21,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [tagsInput, setTagsInput] = useState('');
+  const [folderInput, setFolderInput] = useState('');
   const [viewMode, setViewMode] = useState<'edit' | 'preview' | 'split'>('split');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -26,11 +30,13 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
       setTitle(note.title);
       setContent(note.content);
       setTagsInput(note.tags ? note.tags.join(', ') : '');
+      setFolderInput(note.folder || '');
       setErrorMessage(null);
     } else {
       setTitle('');
       setContent('');
       setTagsInput('');
+      setFolderInput('');
       setErrorMessage(null);
     }
   }, [note]);
@@ -57,7 +63,8 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
         {
           title: title.trim(),
           content: content.trim(),
-          tags: parsedTags
+          tags: parsedTags,
+          folder: folderInput.trim() || null
         },
         note ? note.id : undefined
       );
@@ -75,6 +82,17 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
           <span className="font-bold text-fazt-100 uppercase">
             {note ? `[EDITAR NOTA: ${note.id.substring(0, 8)}...]` : '[NUEVA NOTA]'}
           </span>
+          {note && (
+            <span
+              className={`px-1.5 py-0.5 text-[10px] border uppercase ${
+                note.has_embedding
+                  ? 'border-emerald-500/40 text-emerald-400 bg-emerald-950/20'
+                  : 'border-fazt-600 text-fazt-500'
+              }`}
+            >
+              {note.has_embedding ? 'VECTORIZADA' : 'SIN VECTOR'}
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -121,7 +139,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
             disabled={saving}
             className="border border-fazt-accent bg-fazt-accent text-black font-bold px-3 py-1 hover:bg-emerald-400 disabled:opacity-50"
           >
-            {saving ? '[PERSISTIENDO...]' : '[GUARDAR NOTA]'}
+            {saving ? '[GUARDANDO Y VECTORIZANDO...]' : '[GUARDAR NOTA]'}
           </button>
         </div>
       </div>
@@ -132,7 +150,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
         </div>
       )}
 
-      {/* Title and Tags inputs */}
+      {/* Metadata inputs */}
       <div className="p-3 border-b border-fazt-850 space-y-2 bg-fazt-900/50">
         <div>
           <label className="block font-mono text-[11px] text-fazt-600 uppercase mb-1">
@@ -142,22 +160,45 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Ejemplo: Arquitectura de Pipelines RAG con Pgvector"
+            placeholder="Ejemplo: Arquitectura de Pipelines RAG"
             className="w-full bg-fazt-950 border border-fazt-800 px-3 py-1.5 text-sm text-fazt-100 focus:outline-none focus:border-white font-mono"
           />
         </div>
 
-        <div>
-          <label className="block font-mono text-[11px] text-fazt-600 uppercase mb-1">
-            ETIQUETAS TECNICAS (SEPARADAS POR COMA):
-          </label>
-          <input
-            type="text"
-            value={tagsInput}
-            onChange={(e) => setTagsInput(e.target.value)}
-            placeholder="backend, postgres, ai, rag"
-            className="w-full bg-fazt-950 border border-fazt-800 px-3 py-1 text-xs text-fazt-200 focus:outline-none focus:border-white font-mono"
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <div>
+            <label className="block font-mono text-[11px] text-fazt-600 uppercase mb-1">
+              ETIQUETAS TECNICAS (SEPARADAS POR COMA):
+            </label>
+            <input
+              type="text"
+              value={tagsInput}
+              onChange={(e) => setTagsInput(e.target.value)}
+              placeholder="backend, postgres, rag"
+              className="w-full bg-fazt-950 border border-fazt-800 px-3 py-1 text-xs text-fazt-200 focus:outline-none focus:border-white font-mono"
+            />
+          </div>
+
+          <div>
+            <label className="block font-mono text-[11px] text-fazt-600 uppercase mb-1">
+              CARPETA / DIRECTORIO:
+            </label>
+            <div className="flex items-center gap-1">
+              <input
+                type="text"
+                list="folders-list"
+                value={folderInput}
+                onChange={(e) => setFolderInput(e.target.value)}
+                placeholder="Raiz (o escribe una nueva carpeta)"
+                className="w-full bg-fazt-950 border border-fazt-800 px-3 py-1 text-xs text-fazt-200 focus:outline-none focus:border-white font-mono"
+              />
+              <datalist id="folders-list">
+                {availableFolders.map((f) => (
+                  <option key={f} value={f} />
+                ))}
+              </datalist>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -166,13 +207,12 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
         {(viewMode === 'edit' || viewMode === 'split') && (
           <div className={`flex flex-col ${viewMode === 'split' ? 'w-1/2 border-r border-fazt-800' : 'w-full'}`}>
             <div className="bg-fazt-900 px-3 py-1 border-b border-fazt-850 font-mono text-[10px] text-fazt-600 uppercase">
-              ENTRADA MARKDOWN RAW
+              CONTENIDO (MARKDOWN)
             </div>
-            <textarea
+            <MarkdownEditor
               value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Redacte el cuerpo de la nota en formato Markdown..."
-              className="w-full flex-1 bg-fazt-950 p-3 text-xs font-mono text-fazt-200 focus:outline-none resize-none selection:bg-fazt-800"
+              onChange={setContent}
+              placeholder="Escriba el cuerpo en Markdown. Use # para encabezados, `codigo`, etc."
             />
           </div>
         )}

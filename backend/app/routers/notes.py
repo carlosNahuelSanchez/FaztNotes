@@ -16,6 +16,7 @@ def to_note_response(note: Note) -> NoteResponse:
         title=note.title,
         content=note.content,
         tags=note.tags or [],
+        folder=note.folder,
         created_at=note.created_at,
         updated_at=note.updated_at,
         has_embedding=note.embedding is not None
@@ -26,6 +27,7 @@ def to_note_response(note: Note) -> NoteResponse:
 def list_notes(
     search: Optional[str] = Query(None, description="Termino de busqueda textual"),
     tag: Optional[str] = Query(None, description="Filtro por etiqueta"),
+    folder: Optional[str] = Query(None, description="Filtro por carpeta (__root__ para raiz)"),
     db: Session = Depends(get_db)
 ):
     stmt = select(Note)
@@ -40,8 +42,13 @@ def list_notes(
         )
 
     if tag:
-        # Array contains tag
         stmt = stmt.where(Note.tags.contains([tag.strip()]))
+
+    if folder is not None:
+        if folder == "__root__" or folder == "":
+            stmt = stmt.where(or_(Note.folder.is_(None), Note.folder == ""))
+        else:
+            stmt = stmt.where(Note.folder == folder.strip())
 
     stmt = stmt.order_by(Note.updated_at.desc())
     notes = db.execute(stmt).scalars().all()
@@ -54,6 +61,14 @@ def list_tags(db: Session = Depends(get_db)):
     results = db.execute(stmt).scalars().all()
     clean_tags = sorted(list({t for t in results if t}))
     return clean_tags
+
+
+@router.get("/folders", response_model=List[str])
+def list_folders(db: Session = Depends(get_db)):
+    stmt = select(Note.folder).distinct()
+    results = db.execute(stmt).scalars().all()
+    clean_folders = sorted(list({f.strip() for f in results if f and f.strip()}))
+    return clean_folders
 
 
 @router.get("/{note_id}", response_model=NoteResponse)
@@ -70,17 +85,19 @@ def get_note(note_id: str, db: Session = Depends(get_db)):
 @router.post("", response_model=NoteResponse, status_code=status.HTTP_201_CREATED)
 def create_note(payload: NoteCreate, db: Session = Depends(get_db)):
     clean_tags = [t.strip() for t in payload.tags if t.strip()]
+    clean_folder = payload.folder.strip() if payload.folder and payload.folder.strip() else None
 
     new_note = Note(
         title=payload.title.strip(),
         content=payload.content.strip(),
-        tags=clean_tags
+        tags=clean_tags,
+        folder=clean_folder
     )
     db.add(new_note)
     db.commit()
     db.refresh(new_note)
 
-    # Ingesta automatica de embedding en pgvector
+    # Ingesta y vectorizacion inmediata
     sync_note_embedding(db, new_note)
     db.refresh(new_note)
 
@@ -97,27 +114,40 @@ def update_note(note_id: str, payload: NoteUpdate, db: Session = Depends(get_db)
         )
 
     changed = False
+    re_embed = False
+
     if payload.title is not None and payload.title.strip() != note.title:
         note.title = payload.title.strip()
         changed = True
+        re_embed = True
 
     if payload.content is not None and payload.content.strip() != note.content:
         note.content = payload.content.strip()
         changed = True
+        re_embed = True
 
     if payload.tags is not None:
         clean_tags = [t.strip() for t in payload.tags if t.strip()]
         if clean_tags != note.tags:
             note.tags = clean_tags
             changed = True
+            re_embed = True
+
+    if payload.folder is not None:
+        clean_folder = payload.folder.strip() if payload.folder.strip() else None
+        if clean_folder != note.folder:
+            note.folder = clean_folder
+            changed = True
 
     if changed:
         db.add(note)
         db.commit()
         db.refresh(note)
-        # Actualizacion coherente en pgvector
-        sync_note_embedding(db, note)
-        db.refresh(note)
+
+        # Si cambio contenido, titulo o tags, regenerar vector de inmediato
+        if re_embed:
+            sync_note_embedding(db, note)
+            db.refresh(note)
 
     return to_note_response(note)
 

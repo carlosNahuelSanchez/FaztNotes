@@ -48,17 +48,29 @@ export const NoteList: React.FC<NoteListProps> = ({
         return (
           <div
             key={note.id}
+            draggable
+            onDragStart={(e) => {
+              e.dataTransfer.setData('text/plain', note.id);
+              e.dataTransfer.effectAllowed = 'move';
+            }}
             onClick={() => onSelectNote(note)}
-            className={`p-3 cursor-pointer transition-colors text-xs font-mono border-l-2 ${
+            className={`p-3 cursor-grab active:cursor-grabbing transition-colors text-xs font-mono border-l-2 ${
               isSelected
                 ? 'bg-fazt-900 border-white text-white'
                 : 'bg-fazt-950 border-transparent text-fazt-400 hover:bg-fazt-900 hover:text-fazt-200'
             }`}
           >
             <div className="flex items-start justify-between gap-2 mb-1">
-              <span className="font-bold text-sm text-fazt-100 truncate flex-1">
-                {note.title}
-              </span>
+              <div className="flex items-center gap-1.5 truncate flex-1">
+                {note.folder && (
+                  <span className="text-zinc-500 text-[10px] bg-zinc-900 border border-zinc-800 px-1">
+                    /{note.folder}
+                  </span>
+                )}
+                <span className="font-bold text-sm text-fazt-100 truncate">
+                  {note.title}
+                </span>
+              </div>
               <div className="flex items-center gap-1.5 shrink-0">
                 <span
                   className={`px-1 py-0.2 text-[10px] uppercase border ${

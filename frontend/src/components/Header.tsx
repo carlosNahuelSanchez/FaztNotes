@@ -25,7 +25,7 @@ export const Header: React.FC<HeaderProps> = ({
             FAZTNOTES
           </span>
           <span className="text-fazt-400 text-xs hidden sm:inline">
-            // ARQUITECTURA RAG + PGVECTOR
+            // MOTOR DOCUMENTAL Y ASISTENTE NEXO
           </span>
         </div>
 
@@ -68,9 +68,9 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
 
             <div className="flex items-center gap-1.5 border border-fazt-800 px-2 py-1 bg-fazt-950">
-              <span className="text-fazt-600">GEMINI:</span>
+              <span className="text-fazt-600">MOTOR IA:</span>
               <span className={isGeminiOk ? 'text-fazt-accent font-bold' : 'text-fazt-warn font-bold'}>
-                {isGeminiOk ? 'ACTIVO' : 'SIN LLAVE'}
+                {isGeminiOk ? 'ACTIVO' : 'SIN CONFIGURAR'}
               </span>
             </div>
 

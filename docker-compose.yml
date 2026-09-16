@@ -34,7 +34,7 @@ services:
       POSTGRES_PORT: 5432
       LLM_MODEL: ${LLM_MODEL:-gemini-3.5-flash-lite}
     ports:
-      - "${BACKEND_PORT:-8000}:8000"
+      - "${BACKEND_PORT:-8780}:8000"
     depends_on:
       db:
         condition: service_healthy
@@ -52,7 +52,7 @@ services:
     container_name: faztnotes-frontend
     restart: unless-stopped
     ports:
-      - "${FRONTEND_PORT:-3000}:80"
+      - "${FRONTEND_PORT:-3780}:80"
     depends_on:
       backend:
         condition: service_healthy

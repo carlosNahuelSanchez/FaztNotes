@@ -24,8 +24,8 @@ if [ -f "$PROJECT_DIR/.env" ]; then
   export $(grep -v '^#' "$PROJECT_DIR/.env" | xargs -d '\n' 2>/dev/null || true)
 fi
 
-FRONTEND_PORT="${FRONTEND_PORT:-3000}"
-BACKEND_PORT="${BACKEND_PORT:-8000}"
+FRONTEND_PORT="${FRONTEND_PORT:-3780}"
+BACKEND_PORT="${BACKEND_PORT:-8780}"
 POSTGRES_PORT="${POSTGRES_PORT:-5432}"
 
 case "$1" in

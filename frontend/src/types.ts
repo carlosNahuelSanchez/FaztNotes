@@ -3,6 +3,7 @@ export interface Note {
   title: string;
   content: string;
   tags: string[];
+  folder?: string | null;
   created_at: string;
   updated_at: string;
   has_embedding: boolean;
@@ -12,12 +13,14 @@ export interface NoteCreatePayload {
   title: string;
   content: string;
   tags: string[];
+  folder?: string | null;
 }
 
 export interface NoteUpdatePayload {
   title?: string;
   content?: string;
   tags?: string[];
+  folder?: string | null;
 }
 
 export interface NexoSource {
@@ -41,6 +44,7 @@ export interface ChatMessage {
   timestamp: string;
   sources?: NexoSource[];
   latency_ms?: number;
+  streaming?: boolean;
 }
 
 export interface HealthStatus {

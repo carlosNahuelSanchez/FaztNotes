@@ -123,11 +123,13 @@ def execute_nexo_rag(
         )
 
         tags_str = ", ".join(note.tags) if note.tags else "ninguna"
+        folder_str = note.folder or "raiz"
         block = (
             f"[ID NOTA: {note.id}]\n"
             f"[TITULO: {note.title}]\n"
+            f"[CARPETA: {folder_str}]\n"
             f"[ETIQUETAS: {tags_str}]\n"
-            f"[SIMILITUD: {similarity:.4f}]\n"
+            f"[RELEVANCIA: {similarity:.4f}]\n"
             f"[CONTENIDO]:\n{note.content}\n"
         )
         context_blocks.append(block)
@@ -147,3 +149,64 @@ def execute_nexo_rag(
         sources=sources,
         latency_ms=elapsed_ms
     )
+
+
+def stream_nexo_rag(
+    db: Session,
+    query: str,
+    top_k: int = 4
+):
+    import json
+    start_time = time.perf_counter()
+
+    if not gemini_service.is_configured():
+        elapsed_ms = round((time.perf_counter() - start_time) * 1000, 2)
+        yield f"event: sources\ndata: {json.dumps({'sources': []})}\n\n"
+        yield f"event: chunk\ndata: {json.dumps({'text': 'Error operativo: Motor de IA no configurado en el entorno.'})}\n\n"
+        yield f"event: done\ndata: {json.dumps({'latency_ms': elapsed_ms})}\n\n"
+        return
+
+    matched_notes = retrieve_similar_notes(db, query, top_k=top_k)
+
+    if not matched_notes:
+        elapsed_ms = round((time.perf_counter() - start_time) * 1000, 2)
+        yield f"event: sources\ndata: {json.dumps({'sources': []})}\n\n"
+        yield f"event: chunk\ndata: {json.dumps({'text': 'No hay información en las notas sobre este tema.'})}\n\n"
+        yield f"event: done\ndata: {json.dumps({'latency_ms': elapsed_ms})}\n\n"
+        return
+
+    sources = []
+    context_blocks = []
+    for note, similarity in matched_notes:
+        snippet = note.content[:240].strip()
+        if len(note.content) > 240:
+            snippet += "..."
+        sources.append({
+            "id": str(note.id),
+            "title": note.title,
+            "similarity": round(similarity, 4),
+            "content_snippet": snippet
+        })
+        tags_str = ", ".join(note.tags) if note.tags else "ninguna"
+        folder_str = note.folder or "raiz"
+        block = (
+            f"[ID NOTA: {note.id}]\n"
+            f"[TITULO: {note.title}]\n"
+            f"[CARPETA: {folder_str}]\n"
+            f"[ETIQUETAS: {tags_str}]\n"
+            f"[RELEVANCIA: {similarity:.4f}]\n"
+            f"[CONTENIDO]:\n{note.content}\n"
+        )
+        context_blocks.append(block)
+
+    full_context = "\n---\n".join(context_blocks)
+
+    # Enviar fuentes recuperadas primero
+    yield f"event: sources\ndata: {json.dumps({'sources': sources})}\n\n"
+
+    # Enviar streaming de texto generado por Nexo
+    for chunk in gemini_service.generate_nexo_stream(query=query, context=full_context):
+        yield f"event: chunk\ndata: {json.dumps({'text': chunk})}\n\n"
+
+    elapsed_ms = round((time.perf_counter() - start_time) * 1000, 2)
+    yield f"event: done\ndata: {json.dumps({'latency_ms': elapsed_ms})}\n\n"

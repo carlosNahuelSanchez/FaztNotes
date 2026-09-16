@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     rag_top_k: int = 4
     embedding_model: str = "models/text-embedding-004"
     llm_model: str = "gemini-3.5-flash-lite"
+    backend_port: int = 8780
+    frontend_port: int = 3780
 
     model_config = SettingsConfigDict(
         env_file=".env",
