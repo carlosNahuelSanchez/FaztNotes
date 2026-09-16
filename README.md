@@ -212,3 +212,4 @@ fazt-notes/
 
 ## Licencia
 Distribuido bajo estandares de software libre y codigo abierto para uso privado y educativo.
+"# FaztNotes-Personal-RAG" 
