@@ -120,11 +120,11 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   }, [lines]);
 
   return (
-    <div className="relative flex-1 flex h-full overflow-hidden bg-fazt-950 font-mono text-xs">
+    <div className="relative flex-1 flex h-full overflow-hidden bg-nexo-950 font-mono text-xs">
       {/* Line Numbers Gutter */}
       <div
         ref={gutterRef}
-        className="w-12 shrink-0 py-3 pr-2 text-right text-zinc-600 bg-fazt-900 border-r border-fazt-850 select-none overflow-hidden font-mono text-xs leading-[1.5rem]"
+        className="w-12 shrink-0 py-3 pr-2 text-right text-zinc-600 bg-nexo-900 border-r border-nexo-850 select-none overflow-hidden font-mono text-xs leading-[1.5rem]"
       >
         {Array.from({ length: lineCount }).map((_, i) => (
           <div key={i} className="min-h-[1.5rem]">

@@ -22,7 +22,7 @@ export const MarkdownView: React.FC<MarkdownViewProps> = ({ content, className =
 
   return (
     <div
-      className={`markdown-preview text-fazt-200 text-sm overflow-y-auto ${className}`}
+      className={`markdown-preview text-nexo-200 text-sm overflow-y-auto ${className}`}
       dangerouslySetInnerHTML={{ __html: htmlContent }}
     />
   );

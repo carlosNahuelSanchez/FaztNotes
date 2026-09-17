@@ -50,7 +50,7 @@ export function App() {
   }, []);
 
   return (
-    <div className="flex flex-col h-screen w-screen overflow-hidden bg-fazt-950 text-fazt-200">
+    <div className="flex flex-col h-screen w-screen overflow-hidden bg-nexo-950 text-nexo-200">
       <Header
         activeTab={activeTab}
         onTabChange={setActiveTab}
@@ -66,21 +66,21 @@ export function App() {
         )}
       </main>
 
-      <footer className="border-t border-fazt-850 bg-fazt-900 px-4 py-1.5 flex items-center justify-between font-mono text-[11px] text-fazt-500 select-none shrink-0">
+      <footer className="border-t border-nexo-850 bg-nexo-900 px-4 py-1.5 flex items-center justify-between font-mono text-[11px] text-nexo-500 select-none shrink-0">
         <div className="flex items-center gap-2">
-          <span>FAZTNOTES v1.0</span>
-          <span className="text-fazt-700">│</span>
+          <span>NEXONOTES v1.0</span>
+          <span className="text-nexo-700">│</span>
           <span>{t.madeBy}</span>
           <a
             href="https://www.instagram.com/nexus.studio.dev/"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-fazt-accent font-bold hover:text-emerald-300 hover:underline transition-all duration-200 tracking-wider"
+            className="text-nexo-accent font-bold hover:text-emerald-300 hover:underline transition-all duration-200 tracking-wider"
           >
             NEXUS STUDIO
           </a>
         </div>
-        <div className="hidden sm:flex items-center gap-3 text-fazt-600">
+        <div className="hidden sm:flex items-center gap-3 text-nexo-600">
           <span>SHORTCUTS: [F1] NOTAS │ [F2] NEXO</span>
         </div>
       </footer>

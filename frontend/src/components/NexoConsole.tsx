@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { ChatMessage, NexoSource } from '../types';
 import { streamNexo } from '../api';
 import { MarkdownView } from './MarkdownView';
+import { AsciiNexo } from './AsciiNexo';
 import { useI18n } from '../i18n';
 
 export const NexoConsole: React.FC = () => {
@@ -110,25 +111,25 @@ export const NexoConsole: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-fazt-950 overflow-hidden font-mono">
+    <div className="flex-1 flex flex-col bg-nexo-950 overflow-hidden font-mono">
       {/* Console Top Bar */}
-      <div className="border-b border-fazt-800 bg-fazt-900 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs">
+      <div className="border-b border-nexo-800 bg-nexo-900 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs">
         <div className="flex items-center gap-3">
-          <span className="font-bold text-fazt-100 uppercase tracking-wide">
+          <span className="font-bold text-nexo-100 uppercase tracking-wide">
             {t.nexoConsoleTitle}
           </span>
-          <span className="text-fazt-600 text-[11px] hidden sm:inline">
+          <span className="text-nexo-600 text-[11px] hidden sm:inline">
             {t.nexoSubtitle}
           </span>
         </div>
 
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1 text-[11px]">
-            <span className="text-fazt-600">{t.topKLabel}</span>
+            <span className="text-nexo-600">{t.topKLabel}</span>
             <select
               value={topK}
               onChange={(e) => setTopK(Number(e.target.value))}
-              className="bg-fazt-950 border border-fazt-800 px-1 py-0.5 text-fazt-200 focus:outline-none"
+              className="bg-nexo-950 border border-nexo-800 px-1 py-0.5 text-nexo-200 focus:outline-none"
             >
               <option value={2}>2</option>
               <option value={4}>4</option>
@@ -140,7 +141,7 @@ export const NexoConsole: React.FC = () => {
           <button
             type="button"
             onClick={clearHistory}
-            className="border border-fazt-800 px-2 py-1 text-fazt-400 hover:text-white hover:border-fazt-600 transition-colors"
+            className="border border-nexo-800 px-2 py-1 text-nexo-400 hover:text-white hover:border-nexo-600 transition-colors"
           >
             {t.clearSession}
           </button>
@@ -150,19 +151,19 @@ export const NexoConsole: React.FC = () => {
       {/* Message Stream */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 && (
-          <div className="border border-fazt-850 bg-fazt-900/30 p-6 text-fazt-500 text-xs max-w-2xl mx-auto space-y-2">
-            <div className="flex items-center gap-3 border-b border-fazt-850 pb-3 mb-3">
-              <img src="/logo.png" alt="Logo" className="h-8 w-8 object-contain border border-fazt-700 bg-black" />
-              <div>
-                <div className="font-bold text-fazt-200 uppercase">
-                  {t.welcomeTitle}
-                </div>
-                <div className="text-[10px] text-fazt-600">
-                  {t.welcomeSubtitle}
-                </div>
+          <div className="border border-nexo-850 bg-nexo-900/30 p-6 text-nexo-500 text-xs max-w-2xl mx-auto space-y-4 font-mono">
+            {/* Animated ASCII Banner */}
+            <div className="border border-nexo-800 bg-black/60 p-4 rounded-sm flex flex-col items-center">
+              <AsciiNexo />
+              <div className="text-[11px] text-nexo-300 font-bold uppercase tracking-widest mt-1">
+                {t.welcomeTitle}
+              </div>
+              <div className="text-[10px] text-nexo-500">
+                {t.welcomeSubtitle}
               </div>
             </div>
-            <div className="font-bold text-fazt-400 uppercase text-[11px]">
+
+            <div className="font-bold text-nexo-400 uppercase text-[11px]">
               {t.rulesHeader}
             </div>
             <p>{t.rule1}</p>
@@ -184,20 +185,20 @@ export const NexoConsole: React.FC = () => {
             <div
               key={msg.id}
               className={`border ${
-                isUser ? 'border-fazt-700 bg-fazt-900/50' : 'border-fazt-800 bg-fazt-950'
+                isUser ? 'border-nexo-700 bg-nexo-900/50' : 'border-nexo-800 bg-nexo-950'
               } p-3 text-xs`}
             >
               {/* Message Header */}
-              <div className="flex items-center justify-between border-b border-fazt-850 pb-2 mb-2 text-[11px]">
+              <div className="flex items-center justify-between border-b border-nexo-850 pb-2 mb-2 text-[11px]">
                 <div className="flex items-center gap-2">
                   <span
                     className={`font-bold px-1.5 py-0.5 ${
-                      isUser ? 'bg-fazt-300 text-black' : 'bg-fazt-800 text-fazt-100'
+                      isUser ? 'bg-nexo-300 text-black' : 'bg-nexo-800 text-nexo-100'
                     }`}
                   >
                     {isUser ? t.userRole : t.nexoRole}
                   </span>
-                  <span className="text-fazt-600">{timeStr}</span>
+                  <span className="text-nexo-600">{timeStr}</span>
                   {!isUser && msg.streaming && (
                     <span className="text-emerald-400 text-[10px] animate-pulse">
                       {t.streamingStatus}
@@ -206,16 +207,16 @@ export const NexoConsole: React.FC = () => {
                 </div>
 
                 {!isUser && msg.latency_ms !== undefined && (
-                  <span className="text-fazt-500 text-[10px]">
+                  <span className="text-nexo-500 text-[10px]">
                     [{t.totalLatency} {msg.latency_ms} ms]
                   </span>
                 )}
               </div>
 
               {/* Message Body */}
-              <div className="text-fazt-200 font-sans leading-relaxed">
+              <div className="text-nexo-200 font-sans leading-relaxed">
                 {isUser ? (
-                  <p className="font-mono text-xs text-fazt-100 whitespace-pre-wrap">{msg.content}</p>
+                  <p className="font-mono text-xs text-nexo-100 whitespace-pre-wrap">{msg.content}</p>
                 ) : msg.content ? (
                   <MarkdownView content={msg.content} />
                 ) : (
@@ -225,26 +226,26 @@ export const NexoConsole: React.FC = () => {
 
               {/* Sources List for Nexo */}
               {!isUser && msg.sources && msg.sources.length > 0 && (
-                <div className="mt-4 pt-3 border-t border-fazt-850">
-                  <div className="text-fazt-500 text-[10px] font-bold uppercase mb-2">
+                <div className="mt-4 pt-3 border-t border-nexo-850">
+                  <div className="text-nexo-500 text-[10px] font-bold uppercase mb-2">
                     {t.retrievedSources} ({msg.sources.length}) // {t.docRelevance}:
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     {msg.sources.map((src) => (
                       <div
                         key={src.id}
-                        className="border border-fazt-850 bg-fazt-900 p-2 font-mono text-[11px]"
+                        className="border border-nexo-850 bg-nexo-900 p-2 font-mono text-[11px]"
                       >
-                        <div className="flex items-center justify-between text-fazt-400 font-bold mb-1">
+                        <div className="flex items-center justify-between text-nexo-400 font-bold mb-1">
                           <span className="truncate flex-1">{src.title}</span>
-                          <span className="text-fazt-accent text-[10px] ml-2 shrink-0">
+                          <span className="text-nexo-accent text-[10px] ml-2 shrink-0">
                             {(src.similarity * 100).toFixed(1)}% {t.docRelevance}
                           </span>
                         </div>
-                        <div className="text-fazt-600 text-[10px] mb-1 truncate">
+                        <div className="text-nexo-600 text-[10px] mb-1 truncate">
                           ID: {src.id}
                         </div>
-                        <div className="text-fazt-500 text-[10px] font-sans line-clamp-2">
+                        <div className="text-nexo-500 text-[10px] font-sans line-clamp-2">
                           {src.content_snippet}
                         </div>
                       </div>
@@ -257,9 +258,9 @@ export const NexoConsole: React.FC = () => {
         })}
 
         {loading && messages[messages.length - 1]?.role === 'user' && (
-          <div className="border border-fazt-800 bg-fazt-950 p-4 text-xs font-mono">
-            <div className="flex items-center gap-2 text-fazt-400">
-              <span className="inline-block w-2 h-2 bg-fazt-accent animate-pulse" />
+          <div className="border border-nexo-800 bg-nexo-950 p-4 text-xs font-mono">
+            <div className="flex items-center gap-2 text-nexo-400">
+              <span className="inline-block w-2 h-2 bg-nexo-accent animate-pulse" />
               <span>{t.startingStream}</span>
             </div>
           </div>
@@ -269,9 +270,9 @@ export const NexoConsole: React.FC = () => {
       </div>
 
       {/* Input Bar */}
-      <form onSubmit={handleSubmit} className="border-t border-fazt-800 bg-fazt-900 p-3">
+      <form onSubmit={handleSubmit} className="border-t border-nexo-800 bg-nexo-900 p-3">
         <div className="flex items-center gap-2">
-          <span className="text-fazt-500 text-xs font-bold shrink-0">{t.queryPrefix}</span>
+          <span className="text-nexo-500 text-xs font-bold shrink-0">{t.queryPrefix}</span>
           <div className="flex-1 flex flex-col">
             <input
               type="text"
@@ -280,16 +281,16 @@ export const NexoConsole: React.FC = () => {
               onChange={(e) => setInputQuery(e.target.value)}
               disabled={loading}
               placeholder={t.queryPlaceholder}
-              className="w-full bg-fazt-950 border border-fazt-800 px-3 py-2 text-xs text-fazt-100 focus:outline-none focus:border-white font-mono disabled:opacity-50"
+              className="w-full bg-nexo-950 border border-nexo-800 px-3 py-2 text-xs text-nexo-100 focus:outline-none focus:border-white font-mono disabled:opacity-50"
             />
           </div>
-          <span className="text-fazt-500 text-[10px] font-mono shrink-0">
+          <span className="text-nexo-500 text-[10px] font-mono shrink-0">
             {inputQuery.length} / 500
           </span>
           <button
             type="submit"
             disabled={loading || !inputQuery.trim()}
-            className="border border-white bg-white text-black font-bold text-xs px-4 py-2 hover:bg-fazt-200 transition-colors disabled:opacity-40"
+            className="border border-white bg-white text-black font-bold text-xs px-4 py-2 hover:bg-nexo-200 transition-colors disabled:opacity-40"
           >
             {loading ? t.queryButtonStreaming : t.queryButton}
           </button>

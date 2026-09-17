@@ -4,8 +4,10 @@ import { MarkdownView } from './MarkdownView';
 import { MarkdownEditor } from './MarkdownEditor';
 import { useI18n } from '../i18n';
 
+// ponytail: Minimalist Markdown note editor with native textarea and instant preview
 interface NoteEditorProps {
   note: Note | null;
+  initialFolder?: string | null;
   availableFolders?: string[];
   onSave: (payload: NoteCreatePayload, id?: string) => Promise<void>;
   onCancel: () => void;
@@ -14,12 +16,14 @@ interface NoteEditorProps {
 
 export const NoteEditor: React.FC<NoteEditorProps> = ({
   note,
+  initialFolder,
   onSave,
   onCancel,
   saving
 }) => {
   const { t } = useI18n();
   const [title, setTitle] = useState('');
+  const [folder, setFolder] = useState('');
   const [content, setContent] = useState('');
   const [tagsInput, setTagsInput] = useState('');
   const [viewMode, setViewMode] = useState<'edit' | 'preview' | 'split'>('split');
@@ -28,24 +32,28 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
   useEffect(() => {
     if (note) {
       setTitle(note.title);
+      setFolder(note.folder || '');
       setContent(note.content);
       setTagsInput(note.tags ? note.tags.join(', ') : '');
       setErrorMessage(null);
     } else {
       setTitle('');
+      setFolder(initialFolder || '');
       setContent('');
       setTagsInput('');
       setErrorMessage(null);
     }
-  }, [note]);
+  }, [note, initialFolder]);
 
   const handleDiscard = () => {
     if (note) {
       setTitle(note.title);
+      setFolder(note.folder || '');
       setContent(note.content);
       setTagsInput(note.tags ? note.tags.join(', ') : '');
     } else {
       setTitle('');
+      setFolder(initialFolder || '');
       setContent('');
       setTagsInput('');
     }
@@ -76,7 +84,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
           title: title.trim(),
           content: content.trim(),
           tags: parsedTags,
-          folder: note ? note.folder : null
+          folder: folder.trim() || null
         },
         note ? note.id : undefined
       );
@@ -87,33 +95,22 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col h-full bg-fazt-950 border border-fazt-800">
+    <form onSubmit={handleSubmit} className="flex flex-col h-full bg-nexo-950 border border-nexo-800">
       {/* Editor Header / Toolbars */}
-      <div className="p-3 border-b border-fazt-800 bg-fazt-900 flex flex-wrap items-center justify-between gap-3 font-mono text-xs">
+      <div className="p-3 border-b border-nexo-800 bg-nexo-900 flex flex-wrap items-center justify-between gap-3 font-mono text-xs">
         <div className="flex items-center gap-2">
-          <span className="font-bold text-fazt-100 uppercase">
+          <span className="font-bold text-nexo-100 uppercase">
             {note ? `${t.editNoteTitle} ${note.id.substring(0, 8)}...]` : t.newNoteTitle}
           </span>
-          {note && (
-            <span
-              className={`px-1.5 py-0.5 text-[10px] border uppercase ${
-                note.has_embedding
-                  ? 'border-emerald-500/40 text-emerald-400 bg-emerald-950/20'
-                  : 'border-fazt-600 text-fazt-500'
-              }`}
-            >
-              {note.has_embedding ? t.vectorizedBadge : t.noVectorBadge}
-            </span>
-          )}
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex border border-fazt-700 bg-fazt-950">
+          <div className="flex border border-nexo-700 bg-nexo-950">
             <button
               type="button"
               onClick={() => setViewMode('edit')}
               className={`px-2 py-1 ${
-                viewMode === 'edit' ? 'bg-fazt-200 text-black font-bold' : 'text-fazt-400 hover:text-white'
+                viewMode === 'edit' ? 'bg-nexo-200 text-black font-bold' : 'text-nexo-400 hover:text-white'
               }`}
             >
               {t.modeEdit}
@@ -122,7 +119,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
               type="button"
               onClick={() => setViewMode('split')}
               className={`px-2 py-1 ${
-                viewMode === 'split' ? 'bg-fazt-200 text-black font-bold' : 'text-fazt-400 hover:text-white'
+                viewMode === 'split' ? 'bg-nexo-200 text-black font-bold' : 'text-nexo-400 hover:text-white'
               }`}
             >
               {t.modeSplit}
@@ -131,7 +128,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
               type="button"
               onClick={() => setViewMode('preview')}
               className={`px-2 py-1 ${
-                viewMode === 'preview' ? 'bg-fazt-200 text-black font-bold' : 'text-fazt-400 hover:text-white'
+                viewMode === 'preview' ? 'bg-nexo-200 text-black font-bold' : 'text-nexo-400 hover:text-white'
               }`}
             >
               {t.modePreview}
@@ -141,7 +138,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
           <button
             type="button"
             onClick={handleDiscard}
-            className="border border-fazt-700 px-3 py-1 text-fazt-400 hover:text-white hover:border-fazt-500"
+            className="border border-nexo-700 px-3 py-1 text-nexo-400 hover:text-white hover:border-nexo-500"
           >
             {t.discard}
           </button>
@@ -149,7 +146,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
           <button
             type="submit"
             disabled={saving}
-            className="border border-fazt-accent bg-fazt-accent text-black font-bold px-3 py-1 hover:bg-emerald-400 disabled:opacity-50"
+            className="border border-nexo-accent bg-nexo-accent text-black font-bold px-3 py-1 hover:bg-emerald-400 disabled:opacity-50"
           >
             {saving ? t.savingNote : t.saveNote}
           </button>
@@ -157,19 +154,19 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
       </div>
 
       {errorMessage && (
-        <div className="bg-fazt-alert/20 border-b border-fazt-alert text-fazt-alert p-2 font-mono text-xs">
+        <div className="bg-nexo-alert/20 border-b border-nexo-alert text-nexo-alert p-2 font-mono text-xs">
           [ERROR] {errorMessage}
         </div>
       )}
 
       {/* Metadata inputs */}
-      <div className="p-3 border-b border-fazt-850 space-y-2 bg-fazt-900/50">
+      <div className="p-3 border-b border-nexo-850 space-y-2 bg-nexo-900/50">
         <div>
           <div className="flex justify-between items-center mb-1 font-mono text-[11px]">
-            <label className="text-fazt-600 uppercase">
+            <label className="text-nexo-600 uppercase">
               {t.docTitleLabel}
             </label>
-            <span className="text-fazt-500 text-[10px] font-mono">
+            <span className="text-nexo-500 text-[10px] font-mono">
               {title.length} / 100
             </span>
           </div>
@@ -179,16 +176,35 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder={t.docTitlePlaceholder}
-            className="w-full bg-fazt-950 border border-fazt-800 px-3 py-1.5 text-sm text-fazt-100 focus:outline-none focus:border-white font-mono"
+            className="w-full bg-nexo-950 border border-nexo-800 px-3 py-1.5 text-sm text-nexo-100 focus:outline-none focus:border-white font-mono"
           />
         </div>
 
         <div>
           <div className="flex justify-between items-center mb-1 font-mono text-[11px]">
-            <label className="text-fazt-600 uppercase">
+            <label className="text-nexo-600 uppercase">
+              {t.folderInputLabel}
+            </label>
+            <span className="text-nexo-500 text-[10px] font-mono">
+              {folder ? `/${folder}` : t.noFolderRoot}
+            </span>
+          </div>
+          <input
+            type="text"
+            maxLength={100}
+            value={folder}
+            onChange={(e) => setFolder(e.target.value)}
+            placeholder={t.folderInputPlaceholder}
+            className="w-full bg-nexo-950 border border-nexo-800 px-3 py-1 text-xs text-nexo-200 focus:outline-none focus:border-white font-mono"
+          />
+        </div>
+
+        <div>
+          <div className="flex justify-between items-center mb-1 font-mono text-[11px]">
+            <label className="text-nexo-600 uppercase">
               {t.tagsInputLabel}
             </label>
-            <span className="text-fazt-500 text-[10px] font-mono">
+            <span className="text-nexo-500 text-[10px] font-mono">
               {tagsInput.length} / 150
             </span>
           </div>
@@ -198,7 +214,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
             value={tagsInput}
             onChange={(e) => setTagsInput(e.target.value)}
             placeholder="backend, postgres, rag"
-            className="w-full bg-fazt-950 border border-fazt-800 px-3 py-1 text-xs text-fazt-200 focus:outline-none focus:border-white font-mono"
+            className="w-full bg-nexo-950 border border-nexo-800 px-3 py-1 text-xs text-nexo-200 focus:outline-none focus:border-white font-mono"
           />
         </div>
       </div>
@@ -206,10 +222,10 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
       {/* Editor / Preview Area */}
       <div className="flex-1 flex overflow-hidden">
         {(viewMode === 'edit' || viewMode === 'split') && (
-          <div className={`flex flex-col ${viewMode === 'split' ? 'w-1/2 border-r border-fazt-800' : 'w-full'}`}>
-            <div className="bg-fazt-900 px-3 py-1 border-b border-fazt-850 font-mono text-[10px] text-fazt-600 uppercase flex justify-between items-center">
+          <div className={`flex flex-col ${viewMode === 'split' ? 'w-1/2 border-r border-nexo-800' : 'w-full'}`}>
+            <div className="bg-nexo-900 px-3 py-1 border-b border-nexo-850 font-mono text-[10px] text-nexo-600 uppercase flex justify-between items-center">
               <span>{t.contentHeader}</span>
-              <span className="text-fazt-500 text-[10px] font-mono">
+              <span className="text-nexo-500 text-[10px] font-mono">
                 {content.length} CHARS (UNLIMITED)
               </span>
             </div>
@@ -222,15 +238,15 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
         )}
 
         {(viewMode === 'preview' || viewMode === 'split') && (
-          <div className={`flex flex-col ${viewMode === 'split' ? 'w-1/2' : 'w-full'} bg-fazt-950`}>
-            <div className="bg-fazt-900 px-3 py-1 border-b border-fazt-850 font-mono text-[10px] text-fazt-600 uppercase">
+          <div className={`flex flex-col ${viewMode === 'split' ? 'w-1/2' : 'w-full'} bg-nexo-950`}>
+            <div className="bg-nexo-900 px-3 py-1 border-b border-nexo-850 font-mono text-[10px] text-nexo-600 uppercase">
               {t.previewHeader}
             </div>
             <div className="p-4 flex-1 overflow-y-auto">
               {content.trim() ? (
                 <MarkdownView content={content} />
               ) : (
-                <span className="font-mono text-xs text-fazt-700 italic">
+                <span className="font-mono text-xs text-nexo-700 italic">
                   {t.noPreviewContent}
                 </span>
               )}
@@ -240,7 +256,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
       </div>
 
       {/* Footer info */}
-      <div className="px-3 py-1.5 border-t border-fazt-800 bg-fazt-900 flex justify-between items-center font-mono text-[11px] text-fazt-600">
+      <div className="px-3 py-1.5 border-t border-nexo-800 bg-nexo-900 flex justify-between items-center font-mono text-[11px] text-nexo-600">
         <span>{t.bytesLength} {content.length} BYTES</span>
         <span>{t.linesCount} {content ? content.split('\n').length : 0} | CHARS: {content.length}</span>
       </div>
