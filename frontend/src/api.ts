@@ -2,6 +2,7 @@ import {
   Note,
   NoteCreatePayload,
   NoteUpdatePayload,
+  NoteImportResult,
   NexoQueryResponse,
   NexoSource,
   HealthStatus
@@ -54,6 +55,50 @@ export async function createNote(payload: NoteCreatePayload): Promise<Note> {
     throw new Error(err.detail || 'Fallo al crear la nota');
   }
   return res.json();
+}
+
+export async function importNoteFile(
+  file: File,
+  folder?: string | null,
+  title?: string,
+  tags?: string[]
+): Promise<NoteImportResult> {
+  const formData = new FormData();
+  formData.append('file', file);
+  if (folder) formData.append('folder', folder);
+  if (title) formData.append('title', title);
+  if (tags && tags.length > 0) formData.append('tags', tags.join(','));
+
+  const res = await fetch(`${API_BASE}/notes/import`, {
+    method: 'POST',
+    body: formData
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Fallo al importar archivo' }));
+    throw new Error(err.detail || 'Fallo al importar el archivo.');
+  }
+  return res.json();
+}
+
+export function getExportNoteUrl(id: string): string {
+  return `${API_BASE}/notes/${id}/export`;
+}
+
+export function getExportFolderUrl(folder?: string | null): string {
+  if (folder && folder.trim()) {
+    return `${API_BASE}/notes/export/folder?folder=${encodeURIComponent(folder.trim())}`;
+  }
+  return `${API_BASE}/notes/export/folder`;
+}
+
+export function triggerDownload(url: string) {
+  const a = document.createElement('a');
+  a.href = url;
+  a.setAttribute('download', '');
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }
 
 export async function updateNote(id: string, payload: NoteUpdatePayload): Promise<Note> {

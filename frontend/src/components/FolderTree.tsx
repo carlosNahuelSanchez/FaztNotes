@@ -1,76 +1,148 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
+import { Note } from '../types';
 import { useI18n } from '../i18n';
+import { FileCodeIcon, FolderIcon, ChevronRightIcon, ChevronDownIcon, UploadIcon, DownloadIcon } from './CyberIcons';
 
 interface FolderTreeProps {
+  notes: Note[];
   folders: string[];
-  selectedFolder: string | null;
-  onSelectFolder: (folder: string | null) => void;
+  selectedNoteId: string | null;
+  onSelectNote: (note: Note) => void;
+  onDeleteNote: (id: string, title: string) => void;
   onCreateFolder: (name: string) => void;
+  onCreateNote: (folder?: string | null) => void;
+  onImportFile: (file: File, folderTarget?: string | null) => void;
+  onExportFolder?: (folder: string | null) => void;
+  onExportNote?: (note: Note) => void;
   onDropNoteOnFolder: (noteId: string, folderName: string | null) => void;
   onMoveFolder: (sourceFolder: string, targetFolder: string | null) => void;
-  totalNotesCount: number;
 }
 
 interface TreeNode {
   name: string;
   fullPath: string;
-  children: Map<string, TreeNode>;
+  subfolders: Map<string, TreeNode>;
+  notes: Note[];
 }
 
 export const FolderTree: React.FC<FolderTreeProps> = ({
+  notes,
   folders,
-  selectedFolder,
-  onSelectFolder,
+  selectedNoteId,
+  onSelectNote,
+  onDeleteNote,
   onCreateFolder,
+  onCreateNote,
+  onImportFile,
+  onExportFolder,
+  onExportNote,
   onDropNoteOnFolder,
-  onMoveFolder,
-  totalNotesCount
+  onMoveFolder
 }) => {
   const { t } = useI18n();
-  const [isCreatingRoot, setIsCreatingRoot] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [importTargetFolder, setImportTargetFolder] = useState<string | null>(null);
+  const [isCreatingRootFolder, setIsCreatingRootFolder] = useState(false);
   const [creatingSubFor, setCreatingSubFor] = useState<string | null>(null);
   const [newFolderName, setNewFolderName] = useState('');
   const [dragOverFolder, setDragOverFolder] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const [searchTerm, setSearchTerm] = useState('');
 
-  // Build tree hierarchy from folder paths list
-  const treeRoot = useMemo(() => {
-    const root: TreeNode = { name: 'root', fullPath: '', children: new Map() };
-    
+  // ponytail: Build true hierarchical IDE file tree in a single pass
+  const tree = useMemo(() => {
+    const root = {
+      subfolders: new Map<string, TreeNode>(),
+      notes: [] as Note[]
+    };
+
+    // 1. Register explicit and inherited folder paths
     folders.forEach((path) => {
       const parts = path.split('/').filter(Boolean);
-      let current = root;
-      let currentPath = '';
+      let currentMap = root.subfolders;
+      let accPath = '';
 
       parts.forEach((part) => {
-        currentPath = currentPath ? `${currentPath}/${part}` : part;
-        if (!current.children.has(part)) {
-          current.children.set(part, {
+        accPath = accPath ? `${accPath}/${part}` : part;
+        if (!currentMap.has(part)) {
+          currentMap.set(part, {
             name: part,
-            fullPath: currentPath,
-            children: new Map()
+            fullPath: accPath,
+            subfolders: new Map(),
+            notes: []
           });
         }
-        current = current.children.get(part)!;
+        currentMap = currentMap.get(part)!.subfolders;
       });
     });
 
-    return root;
-  }, [folders]);
+    // 2. Distribute notes: directly to root or to their exact immediate folder
+    notes.forEach((note) => {
+      const folderPath = (note.folder || '').trim();
+      if (!folderPath) {
+        root.notes.push(note);
+      } else {
+        const parts = folderPath.split('/').filter(Boolean);
+        let currentMap = root.subfolders;
+        let targetNode: TreeNode | null = null;
+        let accPath = '';
 
-  const toggleCollapse = (fullPath: string, e: React.MouseEvent) => {
+        for (const part of parts) {
+          accPath = accPath ? `${accPath}/${part}` : part;
+          if (!currentMap.has(part)) {
+            currentMap.set(part, {
+              name: part,
+              fullPath: accPath,
+              subfolders: new Map(),
+              notes: []
+            });
+          }
+          const foundNode = currentMap.get(part);
+          if (foundNode) {
+            targetNode = foundNode;
+            currentMap = foundNode.subfolders;
+          }
+        }
+
+        if (targetNode) {
+          (targetNode as TreeNode).notes.push(note);
+        } else {
+          root.notes.push(note);
+        }
+      }
+    });
+
+    return root;
+  }, [folders, notes]);
+
+  const triggerImport = (folder: string | null) => {
+    setImportTargetFolder(folder);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      onImportFile(file, importTargetFolder);
+    }
+  };
+
+  const toggleFolder = (fullPath: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setCollapsed((prev) => ({ ...prev, [fullPath]: !prev[fullPath] }));
   };
 
-  const handleCreateSubmit = (e: React.FormEvent, parentPath: string | null) => {
+  const handleCreateFolderSubmit = (e: React.FormEvent, parentPath: string | null) => {
     e.preventDefault();
-    const cleanName = newFolderName.trim();
-    if (cleanName) {
-      const fullPath = parentPath ? `${parentPath}/${cleanName}` : cleanName;
+    const clean = newFolderName.trim();
+    if (clean) {
+      const fullPath = parentPath ? `${parentPath}/${clean}` : clean;
       onCreateFolder(fullPath);
       setNewFolderName('');
-      setIsCreatingRoot(false);
+      setIsCreatingRootFolder(false);
       setCreatingSubFor(null);
     }
   };
@@ -90,7 +162,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
     e.stopPropagation();
     setDragOverFolder(null);
 
-    const rawItem = e.dataTransfer.getData('application/fazt-item');
+    const rawItem = e.dataTransfer.getData('application/nexo-item');
     if (rawItem) {
       try {
         const item = JSON.parse(rawItem);
@@ -110,106 +182,188 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
     }
   };
 
-  // Recursive renderer for IDE tree nodes
-  const renderNode = (node: TreeNode, depth: number = 0) => {
-    const hasChildren = node.children.size > 0;
+  // Filter helper for search
+  const matchesSearch = (title: string) => {
+    if (!searchTerm.trim()) return true;
+    return title.toLowerCase().includes(searchTerm.trim().toLowerCase());
+  };
+
+  // Render a note item in the IDE tree
+  const renderNoteItem = (note: Note, depth: number) => {
+    if (!matchesSearch(note.title)) return null;
+    const isSelected = selectedNoteId === note.id;
+
+    return (
+      <div
+        key={note.id}
+        draggable
+        onDragStart={(e) => {
+          e.stopPropagation();
+          e.dataTransfer.setData('text/plain', note.id);
+          e.dataTransfer.setData('application/nexo-item', JSON.stringify({ type: 'note', id: note.id }));
+          e.dataTransfer.effectAllowed = 'move';
+        }}
+        onClick={() => onSelectNote(note)}
+        style={{ paddingLeft: `${depth * 14 + 10}px` }}
+        className={`group py-1 pr-2 cursor-pointer flex items-center justify-between text-xs transition-colors select-none ${
+          isSelected
+            ? 'bg-nexo-900 text-white font-bold border-l-2 border-nexo-accent'
+            : 'border-l-2 border-transparent text-nexo-300 hover:bg-nexo-900/60 hover:text-white'
+        }`}
+      >
+        <div className="flex items-center gap-2 truncate flex-1 font-mono">
+          <FileCodeIcon className="w-3.5 h-3.5 text-emerald-500/80 group-hover:text-emerald-400 shrink-0 transition-colors" />
+          <span className="truncate">{note.title}.md</span>
+        </div>
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          {onExportNote && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onExportNote(note);
+              }}
+              className="text-[10px] text-cyan-400 hover:text-white px-1 hover:bg-cyan-950/50 transition-colors"
+              title="Exportar nota (.md)"
+            >
+              EXP
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDeleteNote(note.id, note.title);
+            }}
+            className="text-[10px] text-nexo-alert hover:text-red-400 px-1 hover:bg-red-950/50 transition-colors"
+            title="Eliminar nota"
+          >
+            DEL
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  // Recursive renderer for folders and their direct immediate notes
+  const renderFolderNode = (node: TreeNode, depth: number = 0) => {
     const isCollapsed = !!collapsed[node.fullPath];
-    const isSelected = selectedFolder === node.fullPath;
     const isDragOver = dragOverFolder === node.fullPath;
     const isAddingSub = creatingSubFor === node.fullPath;
+    const directNotes = node.notes;
+    const childFolders = Array.from(node.subfolders.values());
 
     return (
       <div key={node.fullPath} className="flex flex-col">
+        {/* Folder Header Row */}
         <div
           draggable
           onDragStart={(e) => {
             e.stopPropagation();
-            e.dataTransfer.setData('application/fazt-item', JSON.stringify({ type: 'folder', path: node.fullPath }));
+            e.dataTransfer.setData('application/nexo-item', JSON.stringify({ type: 'folder', path: node.fullPath }));
             e.dataTransfer.effectAllowed = 'move';
           }}
           onDragOver={(e) => handleDragOver(e, node.fullPath)}
           onDragLeave={handleDragLeave}
           onDrop={(e) => handleDrop(e, node.fullPath)}
-          onClick={() => onSelectFolder(node.fullPath)}
-          style={{ paddingLeft: `${depth * 12 + 8}px` }}
-          className={`py-1 pr-2 cursor-grab active:cursor-grabbing transition-colors border flex items-center justify-between text-xs group ${
+          onClick={(e) => toggleFolder(node.fullPath, e)}
+          style={{ paddingLeft: `${depth * 14 + 6}px` }}
+          className={`group py-1 pr-2 cursor-pointer flex items-center justify-between text-xs transition-colors select-none ${
             isDragOver
-              ? 'bg-emerald-950/40 border-emerald-400 text-emerald-300 font-bold'
-              : isSelected
-              ? 'bg-fazt-900 border-white text-white font-bold'
-              : 'border-transparent text-fazt-400 hover:bg-fazt-900 hover:text-fazt-200'
+              ? 'bg-emerald-950/40 border-l-2 border-emerald-400 text-emerald-300 font-bold'
+              : 'border-l-2 border-transparent text-nexo-400 hover:bg-nexo-900/60 hover:text-white'
           }`}
         >
-          <div className="flex items-center gap-1.5 truncate flex-1">
-            {hasChildren ? (
-              <span
-                onClick={(e) => toggleCollapse(node.fullPath, e)}
-                className="text-fazt-500 hover:text-white px-0.5 select-none font-bold text-[10px]"
-              >
-                {isCollapsed ? '►' : '▼'}
-              </span>
-            ) : (
-              <span className="text-fazt-700 text-[10px]">└</span>
-            )}
-            <span className="truncate">/{node.name}</span>
+          <div className="flex items-center gap-1.5 truncate flex-1 font-mono">
+            <span className="text-nexo-500 group-hover:text-emerald-400 shrink-0 w-3 flex justify-center">
+              {isCollapsed ? <ChevronRightIcon className="w-3 h-3" /> : <ChevronDownIcon className="w-3 h-3" />}
+            </span>
+            <FolderIcon className="w-3.5 h-3.5 text-amber-400/90 group-hover:text-amber-300 shrink-0 transition-colors" />
+            <span className="truncate font-semibold">{node.name}</span>
           </div>
 
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
             {isDragOver && (
-              <span className="text-[10px] text-emerald-400 shrink-0 font-bold">{t.dropHere}</span>
+              <span className="text-[10px] text-emerald-400 font-bold mr-1">{t.dropHere}</span>
+            )}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onCreateNote(node.fullPath);
+              }}
+              className="text-[9px] px-1 border border-nexo-700 bg-nexo-950 text-nexo-accent hover:bg-nexo-800"
+              title="Crear nota aquí"
+            >
+              +NOTA
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                triggerImport(node.fullPath);
+              }}
+              className="text-[9px] px-1 border border-nexo-700 bg-nexo-950 text-emerald-400 hover:text-white hover:bg-nexo-800"
+              title="Importar documento en esta carpeta (Markdown, Word, PDF, ZIP)"
+            >
+              +IMP
+            </button>
+            {onExportFolder && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onExportFolder(node.fullPath);
+                }}
+                className="text-[9px] px-1 border border-nexo-700 bg-nexo-950 text-cyan-400 hover:text-white hover:bg-nexo-800"
+                title="Exportar carpeta como ZIP"
+              >
+                EXP
+              </button>
             )}
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 setCreatingSubFor(isAddingSub ? null : node.fullPath);
-                setIsCreatingRoot(false);
+                setIsCreatingRootFolder(false);
                 setNewFolderName('');
               }}
-              className="text-[10px] px-1 border border-fazt-700 bg-fazt-950 text-fazt-400 hover:text-white hover:border-fazt-500"
-              title="Add subfolder"
+              className="text-[9px] px-1 border border-nexo-700 bg-nexo-950 text-nexo-400 hover:text-white hover:bg-nexo-800"
+              title="Crear subcarpeta"
             >
-              + SUB
+              +SUB
             </button>
           </div>
         </div>
 
-        {/* Subfolder creation form inline */}
+        {/* Subfolder form */}
         {isAddingSub && (
           <form
-            onSubmit={(e) => handleCreateSubmit(e, node.fullPath)}
-            style={{ paddingLeft: `${(depth + 1) * 12 + 8}px` }}
-            className="p-1.5 border-b border-fazt-850 bg-fazt-900/80 my-1 space-y-1"
+            onSubmit={(e) => handleCreateFolderSubmit(e, node.fullPath)}
+            style={{ paddingLeft: `${(depth + 1) * 14 + 10}px` }}
+            className="p-1.5 border-b border-nexo-850 bg-nexo-900/80 my-1 space-y-1"
           >
-            <div className="flex items-center justify-between text-[10px] text-fazt-500">
-              <span>+ Subfolder inside /{node.fullPath}:</span>
-              <span className="text-fazt-600 font-mono text-[9px]">
-                {newFolderName.length} / 60
-              </span>
-            </div>
             <input
               type="text"
               autoFocus
               maxLength={60}
               value={newFolderName}
               onChange={(e) => setNewFolderName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleCreateSubmit(e, node.fullPath);
-              }}
-              placeholder="e.g. api, utils..."
-              className="w-full bg-fazt-950 border border-fazt-800 px-2 py-1 text-xs text-white focus:outline-none focus:border-fazt-accent font-mono"
+              placeholder="subcarpeta..."
+              className="w-full bg-nexo-950 border border-nexo-800 px-2 py-0.5 text-xs text-white focus:outline-none focus:border-nexo-accent font-mono"
             />
             <div className="flex justify-end gap-1">
               <button
                 type="button"
                 onClick={() => setCreatingSubFor(null)}
-                className="text-[10px] text-fazt-400 hover:text-white px-2 py-0.5"
+                className="text-[10px] text-nexo-400 hover:text-white px-1.5 py-0.5"
               >
                 {t.cancel}
               </button>
               <button
                 type="submit"
-                className="bg-fazt-accent text-black font-bold text-[10px] px-2 py-0.5"
+                className="bg-nexo-accent text-black font-bold text-[10px] px-2 py-0.5"
               >
                 {t.create}
               </button>
@@ -217,10 +371,11 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
           </form>
         )}
 
-        {/* Nested Child Folders */}
-        {hasChildren && !isCollapsed && (
+        {/* Expanded Folder Content: Child Folders FIRST, then Direct Immediate Notes */}
+        {!isCollapsed && (
           <div className="flex flex-col">
-            {Array.from(node.children.values()).map((child) => renderNode(child, depth + 1))}
+            {childFolders.map((subNode) => renderFolderNode(subNode, depth + 1))}
+            {directNotes.map((note) => renderNoteItem(note, depth + 1))}
           </div>
         )}
       </div>
@@ -228,53 +383,102 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
   };
 
   return (
-    <div className="border-b md:border-b-0 md:border-r border-fazt-800 bg-fazt-950 flex flex-col font-mono text-xs select-none h-full">
-      {/* Header bar */}
-      <div className="bg-fazt-900 px-3 py-2 border-b border-fazt-850 flex items-center justify-between shrink-0">
-        <span className="font-bold text-fazt-300 text-[11px] uppercase tracking-wider">
-          {t.directoriesTitle}
+    <div className="w-full h-full bg-nexo-950 border-r border-nexo-800 flex flex-col font-mono text-xs select-none">
+      {/* Explorer Top Toolbar */}
+      <div className="bg-nexo-900 px-3 py-2 border-b border-nexo-850 flex items-center justify-between shrink-0">
+        <span className="font-bold text-nexo-300 text-[11px] uppercase tracking-wider flex items-center gap-1.5">
+          <span>{t.explorerTitle}</span>
         </span>
-        <button
-          type="button"
-          onClick={() => {
-            setIsCreatingRoot(!isCreatingRoot);
-            setCreatingSubFor(null);
-            setNewFolderName('');
-          }}
-          className="text-fazt-accent hover:text-emerald-300 text-[11px] px-1.5 py-0.5 border border-fazt-accent/40 bg-fazt-accent/10 font-bold"
-        >
-          {isCreatingRoot ? t.cancel : t.addFolder}
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => onCreateNote(null)}
+            className="text-nexo-accent hover:text-emerald-300 text-[10px] px-1.5 py-0.5 border border-nexo-accent/40 bg-nexo-accent/10 font-bold"
+            title="Crear nueva nota en la raíz"
+          >
+            {t.createNoteBtn}
+          </button>
+          <button
+            type="button"
+            onClick={() => triggerImport(null)}
+            className="text-emerald-400 hover:text-emerald-300 text-[10px] px-1.5 py-0.5 border border-emerald-500/40 bg-emerald-950/20 font-bold flex items-center gap-1"
+            title={t.importHint}
+          >
+            <UploadIcon className="w-3 h-3" />
+            <span>{t.importBtn}</span>
+          </button>
+          {onExportFolder && (
+            <button
+              type="button"
+              onClick={() => onExportFolder(null)}
+              className="text-cyan-400 hover:text-cyan-300 text-[10px] px-1.5 py-0.5 border border-cyan-500/40 bg-cyan-950/20 font-bold flex items-center gap-1"
+              title={t.exportAll}
+            >
+              <DownloadIcon className="w-3 h-3" />
+              <span>ZIP</span>
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => {
+              setIsCreatingRootFolder(!isCreatingRootFolder);
+              setCreatingSubFor(null);
+              setNewFolderName('');
+            }}
+            className="text-nexo-300 hover:text-white text-[10px] px-1.5 py-0.5 border border-nexo-700 bg-nexo-850 font-bold"
+            title="Crear nueva carpeta raíz"
+          >
+            {t.createFolderBtn}
+          </button>
+        </div>
       </div>
 
-      {/* Root creation form */}
-      {isCreatingRoot && (
+      {/* Hidden File Input for Document Import */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileInputChange}
+        accept=".md,.markdown,.txt,.pdf,.docx,.doc,.pptx,.xlsx,.html,.zip"
+        className="hidden"
+      />
+
+      {/* Quick Search Filter */}
+      <div className="p-2 border-b border-nexo-850 bg-nexo-950 shrink-0">
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder={t.searchPlaceholder}
+          className="w-full bg-nexo-900 border border-nexo-800 px-2 py-1 text-xs text-nexo-200 focus:outline-none focus:border-white font-mono placeholder:text-nexo-600"
+        />
+      </div>
+
+      {/* Root Folder Creation Form */}
+      {isCreatingRootFolder && (
         <form
-          onSubmit={(e) => handleCreateSubmit(e, null)}
-          className="p-2 border-b border-fazt-850 bg-fazt-900/60 shrink-0 space-y-1"
+          onSubmit={(e) => handleCreateFolderSubmit(e, null)}
+          className="p-2 border-b border-nexo-850 bg-nexo-900/60 shrink-0 space-y-1"
         >
-          <div className="flex justify-between items-center text-[10px] text-fazt-500">
-            <span>{t.folderPlaceholder}</span>
-            <span className="text-fazt-600 font-mono text-[9px]">
-              {newFolderName.length} / 60
-            </span>
-          </div>
           <input
             type="text"
             autoFocus
             maxLength={60}
             value={newFolderName}
             onChange={(e) => setNewFolderName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') handleCreateSubmit(e, null);
-            }}
-            placeholder="e.g. backend, docs..."
-            className="w-full bg-fazt-950 border border-fazt-800 px-2 py-1 text-xs text-white focus:outline-none focus:border-fazt-accent font-mono"
+            placeholder={t.folderPlaceholder}
+            className="w-full bg-nexo-950 border border-nexo-800 px-2 py-1 text-xs text-white focus:outline-none focus:border-nexo-accent font-mono"
           />
           <div className="flex justify-end gap-1 mt-1">
             <button
+              type="button"
+              onClick={() => setIsCreatingRootFolder(false)}
+              className="text-[10px] text-nexo-400 hover:text-white px-2 py-0.5"
+            >
+              {t.cancel}
+            </button>
+            <button
               type="submit"
-              className="bg-fazt-accent text-black font-bold text-[10px] px-2 py-0.5"
+              className="bg-nexo-accent text-black font-bold text-[10px] px-2 py-0.5"
             >
               {t.create}
             </button>
@@ -282,46 +486,33 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
         </form>
       )}
 
-      {/* Directories Tree Area */}
-      <div className="p-1 space-y-0.5 overflow-y-auto max-h-48 md:max-h-none flex-1">
-        {/* All notes */}
-        <button
-          type="button"
-          onClick={() => onSelectFolder(null)}
-          onDragOver={(e) => handleDragOver(e, '__all__')}
-          onDragLeave={handleDragLeave}
-          onDrop={(e) => handleDrop(e, null)}
-          className={`w-full text-left px-2 py-1.5 transition-colors border ${
-            selectedFolder === null
-              ? 'bg-fazt-900 border-white text-white font-bold'
-              : 'border-transparent text-fazt-400 hover:bg-fazt-900 hover:text-fazt-200'
-          }`}
-        >
-          {t.allNotes} ({totalNotesCount})
-        </button>
+      {/* IDE Tree Content Area */}
+      <div className="flex-1 overflow-y-auto p-1 space-y-0.5">
+        {/* Render Root Folders */}
+        {Array.from(tree.subfolders.values()).map((folderNode) => renderFolderNode(folderNode, 0))}
 
-        {/* Root notes (without folder) */}
-        <div
-          onDragOver={(e) => handleDragOver(e, '__root__')}
-          onDragLeave={handleDragLeave}
-          onDrop={(e) => handleDrop(e, null)}
-          onClick={() => onSelectFolder('__root__')}
-          className={`px-2 py-1.5 cursor-pointer transition-colors border flex items-center justify-between ${
-            dragOverFolder === '__root__'
-              ? 'bg-emerald-950/40 border-emerald-400 text-emerald-300 font-bold'
-              : selectedFolder === '__root__'
-              ? 'bg-fazt-900 border-white text-white font-bold'
-              : 'border-transparent text-fazt-400 hover:bg-fazt-900 hover:text-fazt-200'
-          }`}
-        >
-          <span>{t.rootFolder}</span>
-          {dragOverFolder === '__root__' && (
-            <span className="text-[10px] text-emerald-400 shrink-0 font-bold">{t.dropHere}</span>
-          )}
-        </div>
+        {/* Render Root Notes directly in the tree */}
+        {tree.notes.map((note) => renderNoteItem(note, 0))}
 
-        {/* Nested IDE Tree Render */}
-        {Array.from(treeRoot.children.values()).map((child) => renderNode(child, 0))}
+        {tree.subfolders.size === 0 && tree.notes.length === 0 && (
+          <div className="p-4 text-center text-nexo-600 font-mono text-xs">
+            {t.emptyExplorer}
+          </div>
+        )}
+      </div>
+
+      {/* Root Drag & Drop Zone at bottom */}
+      <div
+        onDragOver={(e) => handleDragOver(e, '__root__')}
+        onDragLeave={handleDragLeave}
+        onDrop={(e) => handleDrop(e, null)}
+        className={`p-2 border-t text-center text-[10px] font-mono transition-colors shrink-0 ${
+          dragOverFolder === '__root__'
+            ? 'bg-emerald-950/60 border-emerald-400 text-emerald-300 font-bold'
+            : 'border-nexo-850 text-nexo-600 hover:text-nexo-400'
+        }`}
+      >
+        {dragOverFolder === '__root__' ? t.dropHere : t.rootDropZone}
       </div>
     </div>
   );

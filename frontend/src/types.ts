@@ -7,6 +7,7 @@ export interface Note {
   created_at: string;
   updated_at: string;
   has_embedding: boolean;
+  embedding_error?: string | null;
 }
 
 export interface NoteCreatePayload {
@@ -21,6 +22,14 @@ export interface NoteUpdatePayload {
   content?: string;
   tags?: string[];
   folder?: string | null;
+}
+
+export interface NoteImportResult {
+  success: boolean;
+  imported_count: number;
+  notes: Note[];
+  note?: Note | null;
+  warnings: string[];
 }
 
 export interface NexoSource {

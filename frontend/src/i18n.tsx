@@ -5,7 +5,7 @@ export type Language = 'en' | 'es';
 const translations = {
   en: {
     // Header
-    headerTitle: 'FAZTNOTES',
+    headerTitle: 'NEXONOTES',
     headerSubtitle: '// DOCUMENTATION ENGINE & NEXO ASSISTANT',
     tabNotes: '[1] NOTES',
     tabNexo: '[2] NEXO CONSOLE',
@@ -21,64 +21,79 @@ const translations = {
     langEs: 'ES',
     madeBy: 'Made by the team at',
 
-    // NotesManager
+    // NotesManager & Explorer
+    explorerTitle: 'EXPLORER // FILES',
     filterLabel: 'FILTER:',
-    searchPlaceholder: 'Search in title or content...',
-    createNoteBtn: '+ CREATE NEW NOTE',
+    searchPlaceholder: 'Search files and folders...',
+    createNoteBtn: '+ NOTE',
+    createFolderBtn: '+ FOLDER',
+    addSubfolder: '+ SUB',
+    folderPlaceholder: 'Folder name...',
+    create: 'CREATE',
+    dropHere: '[DROP HERE]',
+    rootDropZone: '[MOVE TO ROOT /]',
+    emptyExplorer: 'No files or folders found',
+    noNoteSelectedTitle: '// NEXONOTES WORKSPACE',
+    noNoteSelectedHint: 'Select a note from the explorer to view its Markdown content or create a new one.',
+    createNewAction: '+ CREATE NOTE',
+    importBtn: 'IMPORT',
+    importHint: 'Import Markdown, Word (.docx), PDF or ZIP',
+    importSuccess: "[OK] File '{title}' imported and converted to Markdown.",
+    importZipSuccess: "[OK] {count} note(s) imported successfully.",
+    importWarningsTitle: 'DISCARDED FILES (UNSUPPORTED FORMAT):',
+    importFileTypes: 'Supported: .md, .txt, .docx, .pdf, .zip',
+    importError: 'Error importing document: {error}',
+    importAction: 'IMPORT FILE / ZIP',
+    importingFile: 'CONVERTING TO MARKDOWN...',
+    exportNote: 'EXPORT MD',
+    exportFolder: 'EXPORT ZIP',
+    exportAll: 'EXPORT ALL',
+    btnEditNote: 'EDIT',
+    btnCloseEdit: 'CLOSE EDIT',
+    btnDeleteNote: 'DELETE',
+    updatedLabel: 'UPDATED:',
+    folderLabel: 'FOLDER:',
+    noFolderRoot: 'root',
     tagsLabel: 'TAGS:',
     allTags: 'ALL',
-    recordsCount: 'RECORDS:',
-    dragHint: 'DRAG TO FOLDER',
+    noTags: 'no tags',
+
+    // Deletion Modal
     deleteTitle: '[PERMANENT DELETION CONFIRMATION]',
     deleteWarning: 'WARNING: This operation will irreversibly remove the record from the database.',
     cancel: 'CANCEL',
     executePurge: 'EXECUTE PURGE',
-    noteSavedOk: "[OK] Note '{title}' saved and vectorized.",
-    noteCreatedOk: "[OK] Note '{title}' created in root and vectorized.",
-    noteTransferred: "[SYSTEM] Note successfully transferred to: {target}",
+
+    // System Messages
+    noteSavedOk: "[OK] Note '{title}' saved successfully.",
+    noteCreatedOk: "[OK] Note '{title}' created successfully.",
+    noteVectorFailed: "[ERROR] Note '{title}' saved, but vectorization failed: {error}",
+    noteTransferred: "[SYSTEM] Note moved to: {target}",
     folderCreated: "[SYSTEM] Folder /{folder} created.",
     recordPurged: "[OK] Record {id} purged from database.",
-    errorLoading: "Error loading notes",
+    errorLoading: "Error loading records from database",
     errorProcessing: "Error processing note",
     errorMoving: "Error moving note",
     errorDeleting: "Error deleting note",
 
-    // FolderTree
-    directoriesTitle: 'DIRECTORIES',
-    addFolder: '+ FOLDER',
-    addSubfolder: '+ SUB',
-    folderPlaceholder: 'Folder name...',
-    create: 'CREATE',
-    allNotes: '[/] ALL',
-    rootFolder: '[#] ROOT / NO FOLDER',
-    dropHere: '[DROP]',
-
-    // NoteList
-    loadingRecords: '[LOADING RECORDS FROM POSTGRESQL...]',
-    noNotesFound: '[NO NOTES FOUND UNDER CURRENT CRITERIA]',
-    vectStatus: 'VECT',
-    noVectStatus: 'NO-VECT',
-    deleteShort: 'DEL',
-    noTags: '[no tags]',
-
     // NoteEditor
-    editNoteTitle: '[EDIT NOTE:',
+    editNoteTitle: '[EDITING NOTE:',
     newNoteTitle: '[NEW NOTE]',
-    vectorizedBadge: 'VECTORIZED',
-    noVectorBadge: 'NO VECTOR',
     modeEdit: 'EDIT',
     modeSplit: 'SPLIT',
     modePreview: 'PREVIEW',
-    discard: 'DISCARD',
+    discard: 'CANCEL',
     saveNote: '[SAVE NOTE]',
-    savingNote: '[SAVING & VECTORIZING...]',
+    savingNote: '[SAVING NOTE...]',
     titleRequired: 'The TITLE field is required.',
     contentRequired: 'The CONTENT field is required.',
     docTitleLabel: 'DOCUMENT TITLE:',
-    docTitlePlaceholder: 'Example: RAG Pipelines Architecture',
+    docTitlePlaceholder: 'e.g. Architecture Guide',
+    folderInputLabel: 'FOLDER (OPTIONAL):',
+    folderInputPlaceholder: 'e.g. backend/api or leave empty for root',
     tagsInputLabel: 'TECHNICAL TAGS (COMMA SEPARATED):',
     contentHeader: 'CONTENT (MARKDOWN)',
-    editorPlaceholder: 'Write body in Markdown. Use # for headings, `code`, etc.',
+    editorPlaceholder: 'Write in Markdown. Use # for headings, `code`, etc.',
     previewHeader: 'TECHNICAL RENDER',
     noPreviewContent: '[No content to preview]',
     bytesLength: 'LENGTH:',
@@ -110,7 +125,7 @@ const translations = {
   },
   es: {
     // Header
-    headerTitle: 'FAZTNOTES',
+    headerTitle: 'NEXONOTES',
     headerSubtitle: '// MOTOR DOCUMENTAL Y ASISTENTE NEXO',
     tabNotes: '[1] NOTAS',
     tabNexo: '[2] CONSOLA NEXO',
@@ -126,61 +141,76 @@ const translations = {
     langEs: 'ES',
     madeBy: 'Hecho por el equipo de',
 
-    // NotesManager
+    // NotesManager & Explorer
+    explorerTitle: 'EXPLORADOR // ARCHIVOS',
     filterLabel: 'FILTRAR:',
-    searchPlaceholder: 'Buscar en titulo o contenido...',
-    createNoteBtn: '+ CREAR NUEVA NOTA',
+    searchPlaceholder: 'Buscar archivos y carpetas...',
+    createNoteBtn: '+ NOTA',
+    createFolderBtn: '+ CARPETA',
+    addSubfolder: '+ SUB',
+    folderPlaceholder: 'Nombre de carpeta...',
+    create: 'CREAR',
+    dropHere: '[SOLTAR AQUÍ]',
+    rootDropZone: '[MOVER A RAÍZ /]',
+    emptyExplorer: 'No se encontraron notas ni carpetas',
+    noNoteSelectedTitle: '// ESPACIO DE TRABAJO NEXONOTES',
+    noNoteSelectedHint: 'Selecciona una nota del explorador para ver su contenido en Markdown o crea una nueva.',
+    createNewAction: '+ CREAR NOTA',
+    importBtn: 'IMPORTAR',
+    importHint: 'Importar Markdown, Word (.docx), PDF o ZIP',
+    importSuccess: "[OK] Archivo '{title}' importado y convertido a Markdown.",
+    importZipSuccess: "[OK] Se importaron {count} nota(s) correctamente.",
+    importWarningsTitle: 'ARCHIVOS DESCARTADOS (FORMATO NO PERMITIDO):',
+    importFileTypes: 'Admitidos: .md, .txt, .docx, .pdf, .zip',
+    importError: 'Error al importar documento: {error}',
+    importAction: 'IMPORTAR ARCHIVO / ZIP',
+    importingFile: 'CONVIRTIENDO A MARKDOWN...',
+    exportNote: 'EXPORTAR MD',
+    exportFolder: 'EXPORTAR ZIP',
+    exportAll: 'EXPORTAR TODO',
+    btnEditNote: 'EDITAR',
+    btnCloseEdit: 'CERRAR EDICIÓN',
+    btnDeleteNote: 'ELIMINAR',
+    updatedLabel: 'ACTUALIZADO:',
+    folderLabel: 'CARPETA:',
+    noFolderRoot: 'raíz',
     tagsLabel: 'ETIQUETAS:',
     allTags: 'TODAS',
-    recordsCount: 'REGISTROS:',
-    dragHint: 'ARRASTRE A CARPETA',
+    noTags: 'sin etiquetas',
+
+    // Deletion Modal
     deleteTitle: '[CONFIRMACION DE ELIMINACION PERMANENTE]',
     deleteWarning: 'ADVERTENCIA: Esta operacion eliminara de forma irreversible el registro de la base de datos.',
     cancel: 'CANCELAR',
     executePurge: 'EJECUTAR PURGA',
-    noteSavedOk: "[OK] Nota '{title}' guardada y vectorizada.",
-    noteCreatedOk: "[OK] Nota '{title}' creada en raiz y vectorizada.",
+
+    // System Messages
+    noteSavedOk: "[OK] Nota '{title}' guardada correctamente.",
+    noteCreatedOk: "[OK] Nota '{title}' creada correctamente.",
+    noteVectorFailed: "[ERROR] Nota '{title}' guardada, pero falló la vectorización: {error}",
     noteTransferred: "[SISTEMA] Nota transferida exitosamente a: {target}",
     folderCreated: "[SISTEMA] Carpeta /{folder} creada.",
     recordPurged: "[OK] Registro {id} purgado de la base de datos.",
-    errorLoading: "Error al cargar notas",
+    errorLoading: "Error al cargar registros desde la base de datos",
     errorProcessing: "Error al procesar nota",
     errorMoving: "Error al mover nota",
-    errorDeleting: "Error al eliminar",
-
-    // FolderTree
-    directoriesTitle: 'DIRECTORIOS',
-    addFolder: '+ CARPETA',
-    addSubfolder: '+ SUB',
-    folderPlaceholder: 'Nombre de carpeta...',
-    create: 'CREAR',
-    allNotes: '[/] TODAS',
-    rootFolder: '[#] RAIZ / SIN CARPETA',
-    dropHere: '[SOLTAR]',
-
-    // NoteList
-    loadingRecords: '[CARGANDO REGISTROS DESDE POSTGRESQL...]',
-    noNotesFound: '[NO SE REGISTRAN NOTAS BAJO EL CRITERIO ACTUAL]',
-    vectStatus: 'VECT',
-    noVectStatus: 'SIN-VECT',
-    deleteShort: 'DEL',
-    noTags: '[sin etiquetas]',
+    errorDeleting: "Error al eliminar nota",
 
     // NoteEditor
-    editNoteTitle: '[EDITAR NOTA:',
+    editNoteTitle: '[EDITANDO NOTA:',
     newNoteTitle: '[NUEVA NOTA]',
-    vectorizedBadge: 'VECTORIZADA',
-    noVectorBadge: 'SIN VECTOR',
     modeEdit: 'EDICION',
     modeSplit: 'DIVIDIDO',
     modePreview: 'VISTA PREVIA',
-    discard: 'DESCARTAR',
+    discard: 'CANCELAR',
     saveNote: '[GUARDAR NOTA]',
-    savingNote: '[GUARDANDO Y VECTORIZANDO...]',
+    savingNote: '[GUARDANDO NOTA...]',
     titleRequired: 'El campo TITULO es obligatorio.',
     contentRequired: 'El campo CONTENIDO es obligatorio.',
     docTitleLabel: 'TITULO DEL DOCUMENTO:',
-    docTitlePlaceholder: 'Ejemplo: Arquitectura de Pipelines RAG',
+    docTitlePlaceholder: 'Ejemplo: Guía de Arquitectura',
+    folderInputLabel: 'CARPETA (OPCIONAL):',
+    folderInputPlaceholder: 'Ej: backend/api o dejar vacío para raíz',
     tagsInputLabel: 'ETIQUETAS TECNICAS (SEPARADAS POR COMA):',
     contentHeader: 'CONTENIDO (MARKDOWN)',
     editorPlaceholder: 'Escriba el cuerpo en Markdown. Use # para encabezados, `codigo`, etc.',
@@ -226,14 +256,15 @@ interface I18nContextType {
 const I18nContext = createContext<I18nContextType | undefined>(undefined);
 
 export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // ponytail: Default directly to Spanish as requested
   const [lang, setLangState] = useState<Language>(() => {
-    const saved = localStorage.getItem('faztnotes_lang');
-    return (saved === 'es' || saved === 'en') ? saved : 'en'; // DEFAULT EN
+    const saved = localStorage.getItem('nexonotes_lang');
+    return (saved === 'es' || saved === 'en') ? saved : 'es';
   });
 
   const setLang = (newLang: Language) => {
     setLangState(newLang);
-    localStorage.setItem('faztnotes_lang', newLang);
+    localStorage.setItem('nexonotes_lang', newLang);
   };
 
   const t = translations[lang];
