@@ -1,35 +1,35 @@
 services:
   db:
     image: pgvector/pgvector:pg16
-    container_name: faztnotes-db
+    container_name: nexonotes-db
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-faztnotes_db}
-      POSTGRES_USER: ${POSTGRES_USER:-faztnotes_admin}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-faztnotes_secure_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-nexonotes_db}
+      POSTGRES_USER: ${POSTGRES_USER:-nexonotes_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nexonotes_secure_pass}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-faztnotes_admin} -d ${POSTGRES_DB:-faztnotes_db}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-nexonotes_admin} -d ${POSTGRES_DB:-nexonotes_db}"]
       interval: 4s
       timeout: 5s
-      retries: 8
-      start_period: 4s
+      retries: 15
+      start_period: 15s
 
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: faztnotes-backend
+    container_name: nexonotes-backend
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-faztnotes_admin}:${POSTGRES_PASSWORD:-faztnotes_secure_pass}@db:5432/${POSTGRES_DB:-faztnotes_db}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-nexonotes_admin}:${POSTGRES_PASSWORD:-nexonotes_secure_pass}@db:5432/${POSTGRES_DB:-nexonotes_db}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
-      POSTGRES_DB: ${POSTGRES_DB:-faztnotes_db}
-      POSTGRES_USER: ${POSTGRES_USER:-faztnotes_admin}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-faztnotes_secure_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-nexonotes_db}
+      POSTGRES_USER: ${POSTGRES_USER:-nexonotes_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nexonotes_secure_pass}
       POSTGRES_HOST: db
       POSTGRES_PORT: 5432
       LLM_MODEL: ${LLM_MODEL:-gemini-3.5-flash-lite}
@@ -42,14 +42,14 @@ services:
       test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
       interval: 4s
       timeout: 5s
-      retries: 8
-      start_period: 6s
+      retries: 10
+      start_period: 10s
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: faztnotes-frontend
+    container_name: nexonotes-frontend
     restart: unless-stopped
     ports:
       - "${FRONTEND_PORT:-3780}:80"

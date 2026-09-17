@@ -1,1 +1,1 @@
-"""Routers Package for FaztNotes."""
+"""Routers Package for NexoNotes."""

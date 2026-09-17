@@ -15,23 +15,23 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
 )
-logger = logging.getLogger("faztnotes")
+logger = logging.getLogger("nexonotes")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("[FAZTNOTES-SYS] Iniciando ciclo de vida del backend...")
+    logger.info("[NEXONOTES-SYS] Iniciando ciclo de vida del backend...")
     try:
         init_db()
-        logger.info("[FAZTNOTES-SYS] Base de datos y extension pgvector listas para operar.")
+        logger.info("[NEXONOTES-SYS] Base de datos y extension pgvector listas para operar.")
     except Exception as exc:
-        logger.critical(f"[FAZTNOTES-SYS] Error critico en inicializacion de base de datos: {exc}")
+        logger.critical(f"[NEXONOTES-SYS] Error critico en inicializacion de base de datos: {exc}")
     yield
-    logger.info("[FAZTNOTES-SYS] Deteniendo backend de forma limpia...")
+    logger.info("[NEXONOTES-SYS] Deteniendo backend de forma limpia...")
 
 
 app = FastAPI(
-    title="FaztNotes API",
+    title="NexoNotes API",
     version="1.0.0",
     docs_url="/docs",
     redoc_url=None,
@@ -49,7 +49,7 @@ app.add_middleware(
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    logger.error(f"[FAZTNOTES-ERR] Error no controlado en {request.url.path}: {exc}")
+    logger.error(f"[NEXONOTES-ERR] Error no controlado en {request.url.path}: {exc}")
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={"error": "INTERNAL_SERVER_ERROR", "detail": str(exc)}
@@ -67,7 +67,7 @@ def health_check(db: Session = Depends(get_db)):
         total_notes = int(result) if result is not None else 0
         db_status = "connected"
     except Exception as exc:
-        logger.error(f"[FAZTNOTES-HEALTH] Error verificando estado de BD: {exc}")
+        logger.error(f"[NEXONOTES-HEALTH] Error verificando estado de BD: {exc}")
         db_status = f"error: {str(exc)}"
 
     return HealthResponse(

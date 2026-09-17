@@ -5,7 +5,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import declarative_base, sessionmaker, Session
 from app.config import settings
 
-logger = logging.getLogger("faztnotes.database")
+logger = logging.getLogger("nexonotes.database")
 
 engine = create_engine(
     settings.sync_database_url,
@@ -27,7 +27,7 @@ def get_db() -> Generator[Session, None, None]:
 
 
 def init_db(max_retries: int = 15, delay_seconds: int = 2) -> None:
-    logger.info("[FAZTNOTES-DB] Iniciando verificacion de conexion con PostgreSQL...")
+    logger.info("[NEXONOTES-DB] Iniciando verificacion de conexion con PostgreSQL...")
     connected = False
     for attempt in range(1, max_retries + 1):
         try:
@@ -35,27 +35,27 @@ def init_db(max_retries: int = 15, delay_seconds: int = 2) -> None:
                 conn.execute(text("SELECT 1"))
                 conn.commit()
             connected = True
-            logger.info(f"[FAZTNOTES-DB] Conexion exitosa en intento {attempt}.")
+            logger.info(f"[NEXONOTES-DB] Conexion exitosa en intento {attempt}.")
             break
         except Exception as exc:
             logger.warning(
-                f"[FAZTNOTES-DB] Intento {attempt}/{max_retries} fallido: {exc}. Reintentando en {delay_seconds}s..."
+                f"[NEXONOTES-DB] Intento {attempt}/{max_retries} fallido: {exc}. Reintentando en {delay_seconds}s..."
             )
             time.sleep(delay_seconds)
 
     if not connected:
-        raise RuntimeError("[FAZTNOTES-DB] Error critico: No fue posible conectar con PostgreSQL.")
+        raise RuntimeError("[NEXONOTES-DB] Error critico: No fue posible conectar con PostgreSQL.")
 
     with engine.connect() as conn:
-        logger.info("[FAZTNOTES-DB] Asegurando extension 'vector' en PostgreSQL...")
+        logger.info("[NEXONOTES-DB] Asegurando extension 'vector' en PostgreSQL...")
         conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
         conn.commit()
 
-    logger.info("[FAZTNOTES-DB] Creando tablas si no existen...")
+    logger.info("[NEXONOTES-DB] Creando tablas si no existen...")
     Base.metadata.create_all(bind=engine)
 
     with engine.connect() as conn:
-        logger.info("[FAZTNOTES-DB] Creando indice HNSW para busqueda coseno si no existe...")
+        logger.info("[NEXONOTES-DB] Creando indice HNSW para busqueda coseno si no existe...")
         conn.execute(
             text(
                 "CREATE INDEX IF NOT EXISTS idx_notes_embedding "
@@ -74,4 +74,4 @@ def init_db(max_retries: int = 15, delay_seconds: int = 2) -> None:
         )
         conn.commit()
 
-    logger.info("[FAZTNOTES-DB] Inicializacion de base de datos relacional y vectorial completada.")
+    logger.info("[NEXONOTES-DB] Inicializacion de base de datos relacional y vectorial completada.")

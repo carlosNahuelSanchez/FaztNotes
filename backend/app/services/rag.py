@@ -1,13 +1,13 @@
 import logging
 import time
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 from app.models import Note
 from app.schemas import NexoQueryResponse, NexoSource
 from app.services.gemini import gemini_service
 
-logger = logging.getLogger("faztnotes.rag")
+logger = logging.getLogger("nexonotes.rag")
 
 
 def format_note_for_embedding(title: str, content: str, tags: List[str]) -> str:
@@ -15,13 +15,12 @@ def format_note_for_embedding(title: str, content: str, tags: List[str]) -> str:
     return f"TITULO: {title}\nETIQUETAS: {tags_str}\n\nCONTENIDO:\n{content}"
 
 
-def sync_note_embedding(db: Session, note: Note) -> bool:
+def sync_note_embedding(db: Session, note: Note) -> Tuple[bool, Optional[str]]:
+    # ponytail: Return explicit error message to frontend without complex error wrappers
     if not gemini_service.is_configured():
-        logger.warning(
-            f"[FAZTNOTES-RAG] Se omitio vectorizacion para la nota '{note.id}' "
-            "porque GEMINI_API_KEY no esta configurada."
-        )
-        return False
+        msg = "GEMINI_API_KEY no configurada en el sistema. La nota se guardó sin vectorizar."
+        logger.warning(f"[NEXONOTES-RAG] {msg} (Nota: {note.id})")
+        return False, msg
 
     try:
         text_payload = format_note_for_embedding(
@@ -34,14 +33,13 @@ def sync_note_embedding(db: Session, note: Note) -> bool:
         db.add(note)
         db.commit()
         db.refresh(note)
-        logger.info(f"[FAZTNOTES-RAG] Embedding generado y persistido para nota ID: {note.id}")
-        return True
+        logger.info(f"[NEXONOTES-RAG] Embedding generado y persistido para nota ID: {note.id}")
+        return True, None
     except Exception as exc:
-        logger.error(
-            f"[FAZTNOTES-RAG] Error generando embedding para nota ID {note.id}: {exc}"
-        )
+        err_msg = f"Error al generar embedding con Gemini: {str(exc)}"
+        logger.error(f"[NEXONOTES-RAG] {err_msg} (Nota ID: {note.id})")
         db.rollback()
-        return False
+        return False, err_msg
 
 
 def retrieve_similar_notes(
@@ -50,7 +48,7 @@ def retrieve_similar_notes(
     top_k: int = 4
 ) -> List[Tuple[Note, float]]:
     if not gemini_service.is_configured():
-        logger.warning("[FAZTNOTES-RAG] Gemini no configurado; no es posible vectorizar query.")
+        logger.warning("[NEXONOTES-RAG] Gemini no configurado; no es posible vectorizar query.")
         return []
 
     query_vector = gemini_service.generate_query_embedding(query)

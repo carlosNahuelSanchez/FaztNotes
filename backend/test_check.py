@@ -1,4 +1,4 @@
-"""Self-check validation test for FaztNotes backend.
+"""Self-check validation test for NexoNotes backend.
 Tests non-trivial logic: schema validation, prompt formatting, and RAG context construction.
 """
 from app.schemas import NoteCreate, NoteUpdate, NexoQueryRequest, NexoSource, NexoQueryResponse

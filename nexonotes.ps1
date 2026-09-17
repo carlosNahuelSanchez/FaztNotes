@@ -10,24 +10,24 @@ Set-Location $ProjectDir
 
 if (-not (Test-Path "$ProjectDir\.env")) {
     if (Test-Path "$ProjectDir\.env.example") {
-        Write-Host "[FAZTNOTES] Archivo .env no detectado. Creando desde .env.example..."
+        Write-Host "[NEXONOTES] Archivo .env no detectado. Creando desde .env.example..."
         Copy-Item "$ProjectDir\.env.example" "$ProjectDir\.env"
     }
 }
 
 switch ($Action) {
     "start" {
-        Write-Host "[FAZTNOTES-SYS] Iniciando servicios contenerizados..."
+        Write-Host "[NEXONOTES-SYS] Iniciando servicios contenerizados..."
         docker compose up -d --build
 
-        Write-Host "[FAZTNOTES-SYS] Verificando salud de los servicios..."
+        Write-Host "[NEXONOTES-SYS] Verificando salud de los servicios..."
         $maxAttempts = 30
         $attempt = 1
         $backendHealthy = $false
 
         while ($attempt -le $maxAttempts) {
             try {
-                $status = docker inspect --format='{{json .State.Health.Status}}' faztnotes-backend 2>$null
+                $status = docker inspect --format='{{json .State.Health.Status}}' nexonotes-backend 2>$null
                 if ($status -eq '"healthy"') {
                     $backendHealthy = $true
                     break
@@ -51,47 +51,47 @@ switch ($Action) {
     }
 
     "stop" {
-        Write-Host "[FAZTNOTES-SYS] Deteniendo contenedores de forma limpia..."
+        Write-Host "[NEXONOTES-SYS] Deteniendo contenedores de forma limpia..."
         docker compose down
-        Write-Host "[FAZTNOTES-SYS] Sistema detenido."
+        Write-Host "[NEXONOTES-SYS] Sistema detenido."
     }
 
     "logs" {
-        Write-Host "[FAZTNOTES-SYS] Acoplando flujo de logs combinados (Ctrl+C para salir)..."
+        Write-Host "[NEXONOTES-SYS] Acoplando flujo de logs combinados (Ctrl+C para salir)..."
         docker compose logs -f
     }
 
     "install" {
-        Write-Host "[FAZTNOTES-SYS] Configurando alias y acceso global en el sistema..."
+        Write-Host "[NEXONOTES-SYS] Configurando alias y acceso global en el sistema..."
 
         # 1. PowerShell Profile
         $profileDir = Split-Path -Parent $PROFILE
         if (-not (Test-Path $profileDir)) {
             New-Item -ItemType Directory -Path $profileDir -Force | Out-Null
         }
-        $funcCode = "`nfunction faztnotes { & '$ProjectDir\faztnotes.ps1' @args }`n"
+        $funcCode = "`nfunction nexonotes { & '$ProjectDir\nexonotes.ps1' @args }`n"
         if (Test-Path $PROFILE) {
             $content = Get-Content $PROFILE -Raw
-            if ($content -notmatch "function faztnotes") {
+            if ($content -notmatch "function nexonotes") {
                 Add-Content -Path $PROFILE -Value $funcCode
                 Write-Host "[OK] Registrado en `$PROFILE ($PROFILE)"
             } else {
-                Write-Host "[INFO] Ya existe funcion faztnotes en `$PROFILE"
+                Write-Host "[INFO] Ya existe funcion nexonotes en `$PROFILE"
             }
         } else {
             Set-Content -Path $PROFILE -Value $funcCode
-            Write-Host "[OK] Creado `$PROFILE con la funcion faztnotes."
+            Write-Host "[OK] Creado `$PROFILE con la funcion nexonotes."
         }
 
         # 2. Git Bash .bashrc si existe
         $bashrc = "$HOME\.bashrc"
         if (Test-Path $bashrc) {
             $bashContent = Get-Content $bashrc -Raw
-            if ($bashContent -notmatch "alias faztnotes=") {
+            if ($bashContent -notmatch "alias nexonotes=") {
                 $driveLetter = $ProjectDir.Substring(0, 1).ToLower()
                 $tailPath = ($ProjectDir.Substring(2) -replace '\\', '/')
                 $unixPath = "/$driveLetter$tailPath"
-                Add-Content -Path $bashrc -Value "`nalias faztnotes=`"$unixPath/faztnotes`"`n"
+                Add-Content -Path $bashrc -Value "`nalias nexonotes=`"$unixPath/nexonotes`"`n"
                 Write-Host "[OK] Alias registrado en $bashrc"
             } else {
                 Write-Host "[INFO] Ya existe alias en $bashrc"
@@ -107,6 +107,6 @@ switch ($Action) {
             Write-Host "[INFO] El directorio ya se encuentra en el PATH de usuario."
         }
 
-        Write-Host "[FAZTNOTES-SYS] Instalacion completada. 'faztnotes' esta disponible globalmente."
+        Write-Host "[NEXONOTES-SYS] Instalacion completada. 'nexonotes' esta disponible globalmente."
     }
 }

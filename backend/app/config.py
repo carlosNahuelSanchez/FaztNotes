@@ -4,9 +4,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     gemini_api_key: str = ""
-    postgres_db: str = "faztnotes_db"
-    postgres_user: str = "faztnotes_admin"
-    postgres_password: str = "faztnotes_secure_pass"
+    postgres_db: str = "nexonotes_db"
+    postgres_user: str = "nexonotes_admin"
+    postgres_password: str = "nexonotes_secure_pass"
     postgres_host: str = "db"
     postgres_port: int = 5432
     database_url: str = ""

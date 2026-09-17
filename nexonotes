@@ -14,7 +14,7 @@ cd "$PROJECT_DIR"
 
 if [ ! -f "$PROJECT_DIR/.env" ]; then
   if [ -f "$PROJECT_DIR/.env.example" ]; then
-    echo "[FAZTNOTES] Archivo .env no detectado. Creando a partir de .env.example..."
+    echo "[NEXONOTES] Archivo .env no detectado. Creando a partir de .env.example..."
     cp "$PROJECT_DIR/.env.example" "$PROJECT_DIR/.env"
   fi
 fi
@@ -30,16 +30,16 @@ POSTGRES_PORT="${POSTGRES_PORT:-5432}"
 
 case "$1" in
   start)
-    echo "[FAZTNOTES-SYS] Iniciando servicios contenerizados..."
+    echo "[NEXONOTES-SYS] Iniciando servicios contenerizados..."
     docker compose up -d --build
 
-    echo "[FAZTNOTES-SYS] Verificando salud de los servicios (healthcheck)..."
+    echo "[NEXONOTES-SYS] Verificando salud de los servicios (healthcheck)..."
     MAX_ATTEMPTS=30
     ATTEMPT=1
     BACKEND_HEALTHY=0
 
     while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
-      STATUS=$(docker inspect --format='{{json .State.Health.Status}}' faztnotes-backend 2>/dev/null || echo "\"unknown\"")
+      STATUS=$(docker inspect --format='{{json .State.Health.Status}}' nexonotes-backend 2>/dev/null || echo "\"unknown\"")
       if [ "$STATUS" = "\"healthy\"" ]; then
         BACKEND_HEALTHY=1
         break
@@ -62,23 +62,23 @@ case "$1" in
     ;;
 
   stop)
-    echo "[FAZTNOTES-SYS] Deteniendo contenedores de forma limpia..."
+    echo "[NEXONOTES-SYS] Deteniendo contenedores de forma limpia..."
     docker compose down
-    echo "[FAZTNOTES-SYS] Sistema detenido."
+    echo "[NEXONOTES-SYS] Sistema detenido."
     ;;
 
   logs)
-    echo "[FAZTNOTES-SYS] Acoplando flujo de logs combinados (Ctrl+C para salir)..."
+    echo "[NEXONOTES-SYS] Acoplando flujo de logs combinados (Ctrl+C para salir)..."
     docker compose logs -f
     ;;
 
   install)
-    echo "[FAZTNOTES-SYS] Configurando alias automatico en el sistema..."
-    ALIAS_CMD="alias faztnotes=\"$PROJECT_DIR/faztnotes\""
+    echo "[NEXONOTES-SYS] Configurando alias automatico en el sistema..."
+    ALIAS_CMD="alias nexonotes=\"$PROJECT_DIR/nexonotes\""
     CONFIGURED=0
 
     if [ -f "$HOME/.bashrc" ]; then
-      if ! grep -Fq "alias faztnotes=" "$HOME/.bashrc"; then
+      if ! grep -Fq "alias nexonotes=" "$HOME/.bashrc"; then
         echo "" >> "$HOME/.bashrc"
         echo "$ALIAS_CMD" >> "$HOME/.bashrc"
         echo "[OK] Alias registrado en $HOME/.bashrc"
@@ -89,7 +89,7 @@ case "$1" in
     fi
 
     if [ -f "$HOME/.zshrc" ]; then
-      if ! grep -Fq "alias faztnotes=" "$HOME/.zshrc"; then
+      if ! grep -Fq "alias nexonotes=" "$HOME/.zshrc"; then
         echo "" >> "$HOME/.zshrc"
         echo "$ALIAS_CMD" >> "$HOME/.zshrc"
         echo "[OK] Alias registrado en $HOME/.zshrc"
@@ -104,11 +104,11 @@ case "$1" in
       echo "[OK] Archivo $HOME/.bashrc creado con el alias registrado."
     fi
 
-    echo "[FAZTNOTES-SYS] Alias instalado. Ejecute 'source ~/.bashrc' o abra una nueva terminal."
+    echo "[NEXONOTES-SYS] Alias instalado. Ejecute 'source ~/.bashrc' o abra una nueva terminal."
     ;;
 
   *)
-    echo "Uso: faztnotes {start|stop|logs|install}"
+    echo "Uso: nexonotes {start|stop|logs|install}"
     exit 1
     ;;
 esac

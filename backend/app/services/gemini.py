@@ -3,7 +3,7 @@ from typing import List, Optional
 import google.generativeai as genai
 from app.config import settings
 
-logger = logging.getLogger("faztnotes.gemini")
+logger = logging.getLogger("nexonotes.gemini")
 
 
 class GeminiService:
@@ -14,13 +14,13 @@ class GeminiService:
             try:
                 genai.configure(api_key=self.api_key)
                 self.configured = True
-                logger.info("[FAZTNOTES-GEMINI] SDK de Gemini configurado correctamente.")
+                logger.info("[NEXONOTES-GEMINI] SDK de Gemini configurado correctamente.")
             except Exception as exc:
-                logger.error(f"[FAZTNOTES-GEMINI] Error al configurar Gemini SDK: {exc}")
+                logger.error(f"[NEXONOTES-GEMINI] Error al configurar Gemini SDK: {exc}")
                 self.configured = False
         else:
             logger.warning(
-                "[FAZTNOTES-GEMINI] Clave GEMINI_API_KEY no configurada o valor por defecto detectado."
+                "[NEXONOTES-GEMINI] Clave GEMINI_API_KEY no configurada o valor por defecto detectado."
             )
 
     def is_configured(self) -> bool:
@@ -65,7 +65,7 @@ class GeminiService:
                 last_error = exc
                 continue
 
-        logger.error(f"[FAZTNOTES-GEMINI] Fallo al generar embedding con todos los modelos: {last_error}")
+        logger.error(f"[NEXONOTES-GEMINI] Fallo al generar embedding con todos los modelos: {last_error}")
         raise RuntimeError(f"Error al generar embedding con Gemini: {str(last_error)}") from last_error
 
     def generate_embedding(self, text: str) -> List[float]:
@@ -81,7 +81,7 @@ class GeminiService:
             )
 
         system_instruction = (
-            "Eres Nexo, el asistente ejecutivo del sistema FaztNotes. "
+            "Eres Nexo, el asistente ejecutivo del sistema NexoNotes. "
             "Tu personalidad es puramente ejecutiva, objetiva y estricta.\n"
             "Reglas operativas mandatorias:\n"
             "1. Responde exclusivamente utilizando el contexto recuperado de las notas provistas.\n"
@@ -115,7 +115,7 @@ class GeminiService:
                 return "No hay información en las notas sobre este tema."
             return response.text.strip()
         except Exception as exc:
-            logger.error(f"[FAZTNOTES-GEMINI] Fallo al invocar modelo Nexo: {exc}")
+            logger.error(f"[NEXONOTES-GEMINI] Fallo al invocar modelo Nexo: {exc}")
             raise RuntimeError(f"Error al ejecutar inferencia con Nexo: {str(exc)}") from exc
 
     def generate_nexo_stream(self, query: str, context: str):
@@ -124,7 +124,7 @@ class GeminiService:
             return
 
         system_instruction = (
-            "Eres Nexo, el asistente ejecutivo del sistema FaztNotes. "
+            "Eres Nexo, el asistente ejecutivo del sistema NexoNotes. "
             "Tu personalidad es puramente ejecutiva, objetiva y estricta.\n"
             "Reglas operativas mandatorias:\n"
             "1. Responde exclusivamente utilizando el contexto recuperado de las notas provistas.\n"
@@ -163,7 +163,7 @@ class GeminiService:
             if not has_output:
                 yield "No hay información en las notas sobre este tema."
         except Exception as exc:
-            logger.error(f"[FAZTNOTES-GEMINI] Error en stream Nexo: {exc}")
+            logger.error(f"[NEXONOTES-GEMINI] Error en stream Nexo: {exc}")
             yield f"Error al ejecutar inferencia con Nexo: {str(exc)}"
 
 

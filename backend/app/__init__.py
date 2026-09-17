@@ -1,1 +1,1 @@
-"""FaztNotes Backend Application Package."""
+"""NexoNotes Backend Application Package."""

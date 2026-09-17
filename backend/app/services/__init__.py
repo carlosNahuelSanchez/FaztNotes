@@ -1,1 +1,1 @@
-"""Services Package for FaztNotes."""
+"""Services Package for NexoNotes."""
