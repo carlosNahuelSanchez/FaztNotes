@@ -26,8 +26,17 @@ class NoteResponse(NoteBase):
     created_at: datetime
     updated_at: datetime
     has_embedding: bool = False
+    embedding_error: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class NoteImportResult(BaseModel):
+    success: bool
+    imported_count: int
+    notes: List[NoteResponse] = Field(default_factory=list)
+    note: Optional[NoteResponse] = None
+    warnings: List[str] = Field(default_factory=list)
 
 
 class NexoQueryRequest(BaseModel):
