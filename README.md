@@ -29,9 +29,9 @@
 
 ## Descripción General
 
-**NexoNotes** es un sistema autónomo y privado de gestión de documentación técnica con un motor **RAG (Retrieval-Augmented Generation)** integrado y contenerizado mediante Docker.
+**NexoNotes** es un sistema autónomo y privado de gestión de documentación técnica con un motor **RAG (Retrieval-Augmented Generation)** integrado y contenerizado mediante Docker, creado por el equipo de **Nexus Studio**.
 
-Diseñado específicamente para desarrolladores, ingenieros de software, administradores de sistemas y líderes técnicos, NexoNotes destaca por ser una herramienta **ultrarrápida, minimalista y de alta eficiencia**, dotada de una cuidada **estética técnica de TERMINAL, CLI o IDE**. Su interfaz optimizada de alta densidad informativa garantiza una experiencia técnica fluida y sin distracciones, basada en texto plano enriquecido en Markdown y eliminando cualquier sobrecarga visual innecesaria. Te permite centralizar, organizar y consultar tu base de conocimiento técnica de forma instantánea, privada y sin delegar datos ni vectores a servicios en la nube de terceros.
+Diseñado específicamente para desarrolladores, ingenieros de software, administradores de sistemas y líderes técnicos, NexoNotes destaca por ser una herramienta **ultrarrápida, minimalista y de alta eficiencia**, dotada de una cuidada **estética de TERMINAL, CLI o IDE**. Su interfaz optimizada de alta densidad informativa garantiza una experiencia técnica fluida y sin distracciones, basada en texto plano enriquecido en Markdown y eliminando cualquier sobrecarga visual o elementos gráficos innecesarios. Te permite centralizar, organizar y consultar tu base de conocimiento técnica de forma instantánea, privada y sin delegar datos ni vectores a servicios en la nube de terceros.
 
 > [!IMPORTANT]
 > Todas las notas se almacenan localmente en PostgreSQL y se vectorizan de forma automática en embeddings de 768 dimensiones utilizando `pgvector`. Tus datos permanecen 100% bajo tu control y las consultas a Nexo se responden de forma estricta y fundamentada utilizando únicamente la información recuperada de tus notas.
@@ -56,7 +56,7 @@ Diseñado específicamente para desarrolladores, ingenieros de software, adminis
 ```
 
 - **Base de Datos y Almacenamiento Vectorial:** PostgreSQL 16 con extensión `pgvector`. Almacena vectores de 768 dimensiones con índice HNSW para búsquedas semánticas de alta velocidad por similitud coseno.
-- **Backend API:** FastAPI (Python 3.11), SQLAlchemy 2.0 y transmisiones en tiempo real mediante Server-Sent Events (SSE). Indexación vectorial inmediata en cada creación o edición.
+- **Backend API:** FastAPI (Python 3.11), SQLAlchemy 2.0, Microsoft MarkItDown y transmisiones en tiempo real mediante Server-Sent Events (SSE). Indexación vectorial inmediata en cada creación o edición.
 - **Frontend SPA:** React 18, TypeScript y Tailwind CSS con interfaz estilo consola monocromática servida por Nginx.
 - **Orquestación:** Despliegue multicontenedor gestionado mediante Docker Compose.
 
@@ -161,74 +161,74 @@ La CLI de `nexonotes` simplifica la gestión de contenedores en Linux, macOS y W
 
 ## Características Principales
 
-### 1. Gestión de Documentación Técnica
-- **Explorador Jerárquico Estilo IDE:** Árbol de archivos real sin carpetas artificiales; las notas de la raíz se muestran directamente en la raíz y cada carpeta despliega solo sus elementos inmediatos.
-- **Drag & Drop Fluido:** Arrastra notas y carpetas para reestructurar la jerarquía al instante.
-- **Filtros Dinámicos:** Búsqueda textual en tiempo real por título y filtrado por etiquetas técnicas (`#etiqueta`).
-- **Vectorización Transparente con Diagnóstico:** La indexación en pgvector ocurre de fondo. Si ocurre algún error (límite de tokens, cuota o fallo de API de Gemini), el sistema despliega un banner de error explícito en color rojo con el motivo exacto del fallo.
+### 1. Gestión de Documentación Técnica (Estética de Terminal / IDE)
+- **Explorador Jerárquico Estilo IDE:** Árbol de archivos real sin carpetas artificiales; las notas de la raíz se muestran directamente en la raíz y cada carpeta despliega sus elementos correspondientes.
+- **Drag & Drop a la Raíz:** Arrastra notas y carpetas dentro del árbol para moverlas. Soltarlas en cualquier espacio del explorador resaltado en verde esmeralda las mueve directamente a la raíz (`/`).
+- **Búsqueda Global Autónoma:** Busca simultáneamente por título, contenido y etiquetas. Al escribir una consulta, el sistema inspecciona y abre automáticamente todas las carpetas que contengan coincidencias y oculta las que no coincidan.
+- **Filtro de Múltiples Etiquetas:** Selecciona varias etiquetas simultáneamente (`#etiqueta`) con actualización reactiva en tiempo real y opción de restablecimiento con `TODAS`.
+- **Menú Contextual de Tres Puntos (`...`):** Cada nota y carpeta cuenta con un menú con opciones rápidas de apertura, copia, exportación y eliminación.
+- **Vectorización Transparente:** La indexación en pgvector ocurre de fondo. Si ocurre un fallo (límites de API o cuota de Gemini), se despliega un mensaje explícito en rojo brillante informando el motivo exacto.
 
 ### 2. Visualización y Edición Markdown
-- **Modo de Lectura Completo:** Al seleccionar una nota, se despliega enteramente en Markdown a pantalla completa en el panel principal para una experiencia libre de distracciones.
-- **Editor Interactivo:** Botón `[EDITAR]` que abre el panel de edición con modos `Edición`, `Dividido` y `Vista previa`.
-- **Cierre y Renderizado Automático:** Al pulsar `[GUARDAR NOTA]`, el editor se cierra automáticamente y regresa al modo de lectura completo con los cambios aplicados.
-- **Resaltado de Sintaxis:** Bloques de código con estilo, encabezados estilizados, citas y tablas.
+- **Modo Lectura a Pantalla Completa:** Al hacer clic en una nota, se abre directamente en modo de lectura completo Markdown ocupando todo el panel central.
+- **Editor Interactivo:** Botón `[EDITAR]` con selector de modos (`Edición`, `Dividido`, `Vista previa`) y campos de título, carpeta y etiquetas.
+- **Renderizado Técnico:** Bloques de código con resaltado, tablas, listas y renderizado de fórmulas matemáticas LaTeX.
 
-### 3. Importación Inteligente y Verificación de Documentos (Microsoft MarkItDown)
-- **Soporte Markdown Nativo y ZIP:** Importa archivos individuales (`.md`, `.markdown`, `.txt`) o paquetes completos comprimidos en `.zip` manteniendo la estructura de directorios.
-- **Conversión de Word y PDF con Microsoft MarkItDown:** Integra la potente biblioteca **[Microsoft MarkItDown](https://github.com/microsoft/markitdown)** para convertir de forma transparente documentos Word (`.docx`) y archivos PDF (`.pdf`) en sintaxis Markdown limpia y estructurada.
-- **Filtrado y Verificación Preventiva:** Al importar un archivo ZIP, el sistema valida que cada elemento corresponda a un formato legible por el sistema. Si se detectan archivos no permitidos (como imágenes `.png`/`.jpg` o presentaciones PowerPoint `.pptx`), se descartan de forma segura y se despliega un aviso detallado informando al usuario cuáles archivos fueron omitidos.
-- **Indexación Vectorial Inmediata:** Los documentos importados se procesan y vectorizan automáticamente en PostgreSQL (`pgvector`), quedando disponibles al instante para el Asistente Nexo.
-- **Atajos Directos por Carpeta:** Botón `[IMPORTAR]` en la barra superior y atajo rápido `+IMP` en cada carpeta para importar archivos directamente en cualquier nivel de la jerarquía.
+### 3. Importación Inteligente con Microsoft MarkItDown
+- **Soporte de Formatos:** Importa archivos individuales Markdown (`.md`, `.txt`), Word (`.docx`), PDF (`.pdf`) o paquetes comprimidos (`.zip`) manteniendo la jerarquía de directorios.
+- **Motor de Conversión (Microsoft MarkItDown):** Integra la biblioteca oficial **[Microsoft MarkItDown](https://github.com/microsoft/markitdown)** para convertir documentos PDF y Word en sintaxis Markdown de forma transparente.
+- **Filtrado Preventivo de ZIP:** Al subir un archivo ZIP, el sistema analiza su contenido. Si contiene elementos no soportados (como imágenes o presentaciones PowerPoint), los descarta de forma segura y despliega un aviso detallado.
 
-### 4. Exportación Integral de Notas y Carpetas
-- **Descarga de Notas Individuales (.md):** Botón `[EXPORTAR MD]` en el encabezado de lectura y atajo `EXP` en el explorador para descargar cualquier nota como archivo Markdown nativo.
-- **Empaquetado de Carpetas en ZIP:** Exporta cualquier carpeta completa con todas sus subcarpetas y notas convertidas en archivos `.md` preservando la jerarquía relativa mediante el botón `EXP` en el explorador.
-- **Respaldo Completo del Workspace:** Botón `ZIP` en la barra superior para descargar un archivo comprimido que contiene todas las notas y carpetas del sistema.
+> [!WARNING]
+> **Nota sobre la Conversión de Documentos (Microsoft MarkItDown):**
+> La conversión de archivos Word (`.docx`) y PDF (`.pdf`) a Markdown se realiza de forma automatizada mediante la herramienta **Microsoft MarkItDown**. Debido a la naturaleza estrucural compleja de ciertos formatos binarios, la conversión automatizada puede presentar imperfecciones o ligeras fallas de formato en tablas avanzadas, imágenes incrustadas o dislocaciones tipográficas. Si detectas alguna inexactitud en el documento convertido, puedes corregirla fácilmente usando el editor Markdown integrado.
 
-### 5. Consola Ejecutiva IA Nexo
-- **Transmisión en Tiempo Real:** Generación continua de respuesta token por token mediante Server-Sent Events (SSE).
-- **Banner Animado en ASCII:** Interfaz de bienvenida con animación ASCII interactiva y estética de terminal de alta tecnología.
-- **Respuestas Fundamentadas:** Respuestas estrictamente basadas en tus notas con citas obligatorias en línea (`[Fuente: Título (ID)]`).
-- **Panel de Contexto Recuperado:** Inspecciona los fragmentos de notas extraídos junto con sus puntuaciones de similitud coseno.
-- **Monitoreo de Latencia:** Muestra el tiempo total de respuesta de la consulta en milisegundos.
-- **Control de Top-K:** Ajusta dinámicamente la cantidad de fragmentos contextuales inyectados en la generación.
+### 4. Exportación y Respaldo
+- **Descarga de Notas Individuales (.md):** Botón de exportación directa o menú contextual para obtener el archivo Markdown nativo.
+- **Empaquetado de Carpetas y Workspace (ZIP):** Exporta cualquier carpeta completa o el espacio de trabajo entero comprimido en formato `.zip` preservando la jerarquía relativa de subcarpetas.
+
+### 5. Consola Ejecutiva IA Nexo (Motor RAG)
+- **Transmisión SSE en Tiempo Real:** Respuestas generadas token por token sin esperas.
+- **Banner ASCII Interactivo:** Interfaz de consola con animación glífica y estética cyberpunk/terminal.
+- **Respuestas Cimentadas:** Respuestas estrictamente fundamentadas en la base de notas con citas obligatorias (`[Fuente: Título (ID)]`).
+- **Ajuste de Parámetro "Notas de Contexto":** Controla el límite de fragmentos más relevantes recuperados por `pgvector` con un ícono de ayuda (`?`) y tooltip interactivo que explica su funcionamiento.
+- **Temperatura Calibrada (0.3):** Ajustada para ofrecer un equilibrio óptimo entre creatividad explicativa y rigor documental.
+- **Atribución Institucional:** Nexo reconoce su propósito y acredita su desarrollo al equipo de **Nexus Studio**.
+
+### 6. Barra de Estado Permanente y Atajos de Teclado
+- **Barra de Estado del Sistema (`[SYSTEM]`):** Fija en la interfaz. Muestra en tiempo real eventos con código de color:
+  - **Carga:** Gris con pulso (`[SYSTEM: CARGANDO]`).
+  - **Éxito:** Verde esmeralda (`[SYSTEM: OK]`).
+  - **Error:** Rojo (`[SYSTEM: FALLO]`).
+  - Al transcurrir 5 segundos de inactividad, el mensaje se limpia ejecutando una animación de borrado con efecto glífico/matrix.
+- **Atajos de Teclado:**
+  - `[F1]`: Cambiar a panel de Notas
+  - `[F2]`: Cambiar a Consola Nexo
+  - `[ALT+N]`: Crear nueva nota
+  - `[ALT+F]`: Crear nueva carpeta
+  - `[SUPR] / [DELETE]`: Eliminar nota o carpeta seleccionada
+  - `[CTRL+C] / [CTRL+V]`: Copiar y pegar notas o carpetas
+- **Acceso al Código Fuente:** Botón en el pie de página con el ícono oficial de GitHub y enlace directo al repositorio.
 
 ---
 
 ## Manual de Usuario / Guía Práctica
 
-### 1. Explorador de Archivos y Carpetas (Estilo IDE)
-- **Estructura Real sin Carpetas Ficticias:** Las notas creadas en la raíz aparecen directamente en el explorador (como archivos `.md` en un IDE).
-- **Navegación Jerárquica:** Al desplegar una carpeta, solo verás sus subcarpetas y archivos directos, manteniendo una visualización limpia y ordenada.
-- **Creación Rápida:** Utiliza `+ NOTA` o `+ CARPETA` en la barra superior del explorador, o los botones directos `+NOTA` y `+SUB` en el encabezado de cualquier carpeta para crear contenido directamente dentro de ella.
-- **Organización por Drag & Drop:** Puedes arrastrar notas o carpetas enteras para moverlas a otra carpeta o soltarlas en `[MOVER A RAÍZ /]` en la base del árbol.
+### 1. Navegación y Gestión de Archivos
+- **Creación:** Utiliza los botones `+ NOTA` y `+ CARPETA` en el explorador.
+- **Búsqueda:** Escribe cualquier término en el buscador. Las carpetas coincidentes se abrirán automáticamente.
+- **Arrastre a la Raíz:** Arrastra cualquier archivo o carpeta hasta soltarlo en el espacio del explorador marcado en verde para moverlo a la raíz.
+- **Portapapeles:** Selecciona una nota o carpeta, presiona `Ctrl+C` para copiarla y `Ctrl+V` para pegarla en otra carpeta o en la raíz.
 
-### 2. Visualización y Edición en Markdown
-- **Lectura a Pantalla Completa:** Al seleccionar cualquier nota del explorador, se abre inmediatamente en **modo de lectura completo en Markdown**, ocupando todo el espacio de trabajo para una lectura técnica cómoda.
-- **Botón `[EDITAR]`:** Abre el editor interactivo con selector de modos (`Edición`, `Dividido`, `Vista previa`) y campos de título, carpeta y etiquetas.
-- **Botón `[GUARDAR NOTA]`:** Guarda los cambios en la base de datos, actualiza los índices y regresa automáticamente al modo de lectura completo.
-- **Alertas de Fallo en Rojo:** Si la vectorización falla por tokens o problemas en Gemini, un mensaje en **rojo brillante** te informará con precisión el motivo del error.
+### 2. Importación y Conversión
+- Haz clic en el botón de importación en la barra superior o dentro de cualquier carpeta.
+- Selecciona tu archivo `.md`, `.docx`, `.pdf` o `.zip`.
+- Si importas un PDF o Word, **Microsoft MarkItDown** lo convertirá automáticamente a Markdown. Revisa la nota resultante si deseas hacer ajustes manuales de formato.
 
-### 3. Importación de Archivos (Markdown, Word, PDF y ZIP)
-- **Desde la barra del explorador:** Pulsa el botón `[IMPORTAR]` para cargar cualquier archivo o archivo ZIP local en la raíz.
-- **En carpetas específicas:** Haz clic en el botón rápido `+IMP` en el encabezado de cualquier carpeta para importar y convertir un documento directamente dentro de esa ubicación.
-- **Formatos admitidos:**
-  - Archivos Markdown y texto plano (`.md`, `.markdown`, `.txt`).
-  - Documentos de Microsoft Word (`.docx`).
-  - Documentos PDF (`.pdf`).
-  - Archivos comprimidos (`.zip`).
-- **Conversión y Verificación:** Las notas y documentos válidos se convierten a Markdown con **Microsoft MarkItDown**. Si un paquete ZIP contiene archivos incompatibles (imágenes, ejecutables, PPTX), estos son descartados y el sistema reporta la advertencia explícita en pantalla.
-
-### 4. Exportación de Archivos y Carpetas (Descarga .md y .zip)
-- **Exportar Nota:** En el panel de lectura pulsa el botón `[EXPORTAR MD]` o en el explorador presiona `EXP` en la fila de la nota para descargar el archivo `.md`.
-- **Exportar Carpeta:** Haz clic en `EXP` en el encabezado de cualquier carpeta para descargar un archivo ZIP con todas las subcarpetas y notas pertenecientes a ella.
-- **Exportar Todo:** Haz clic en el botón `ZIP` en la barra superior del explorador para descargar un archivo comprimido de todo tu espacio de trabajo.
-
-### 5. Uso del Asistente Nexo (Consola RAG)
-- Cambia a la pestaña **`[2] CONSOLA NEXO`** en la barra superior.
-- Observa la animación de bienvenida en arte ASCII interactivo.
-- Escribe cualquier pregunta técnica en lenguaje natural sobre los temas documentados en tus notas.
-- Nexo responde en tiempo real con transmisión continua, fundamentando cada párrafo con citas explícitas `[Fuente: Título (ID)]`.
+### 3. Asistente Nexo
+- Accede a la pestaña `[2] CONSOLA NEXO`.
+- Escribe tu consulta técnica. Nexo buscará en tus notas y te ofrecerá una respuesta fundamentada con citas.
+- Ajusta el selector **`NOTAS CONTEXTO`** para variar el número de fragmentos consultados.
 
 ---
 
@@ -236,17 +236,17 @@ La CLI de `nexonotes` simplifica la gestión de contenedores en Linux, macOS y W
 
 | Método | Endpoint | Descripción |
 | :--- | :--- | :--- |
-| `GET` | `/health` | Chequeo de estado del sistema (PostgreSQL, conectividad del motor IA, total de notas) |
-| `GET` | `/api/notes` | Listado de notas con filtros opcionales de `search`, `tag` y `folder` |
+| `GET` | `/health` | Estado del sistema (PostgreSQL, motor IA Gemini y total de notas) |
+| `GET` | `/api/notes` | Listado de notas con filtros de `search`, `tag` y `folder` |
 | `POST` | `/api/notes` | Creación de nota con indexación inmediata en `pgvector` |
-| `POST` | `/api/notes/import` | Importa y convierte archivos `.md`, Word (`.docx`), PDF y ZIP a Markdown con validación de formatos |
+| `POST` | `/api/notes/import` | Importa y convierte archivos `.md`, Word, PDF y ZIP a Markdown mediante MarkItDown |
 | `GET` | `/api/notes/{id}/export` | Descarga la nota en formato Markdown (`.md`) |
-| `GET` | `/api/notes/export/folder` | Exporta carpetas o el workspace completo como archivo comprimido (`.zip`) |
+| `GET` | `/api/notes/export/folder` | Exporta carpetas o el workspace completo en `.zip` |
 | `PUT` | `/api/notes/{id}` | Actualización de contenido de nota y regeneración de vector |
-| `DELETE` | `/api/notes/{id}` | Eliminación transaccional del contenido de la nota y su vector |
-| `DELETE` | `/api/notes/folder` | Elimina una carpeta completa junto a todas sus subcarpetas y notas |
-| `GET` | `/api/notes/folders` | Obtiene la lista de carpetas activas |
-| `GET` | `/api/notes/tags` | Obtiene la lista de etiquetas registradas en las notas |
+| `DELETE` | `/api/notes/{id}` | Eliminación de nota e índice vectorial |
+| `DELETE` | `/api/notes/folder` | Elimina una carpeta completa con sus notas y subcarpetas |
+| `GET` | `/api/notes/folders` | Lista de carpetas activas |
+| `GET` | `/api/notes/tags` | Lista de etiquetas registradas |
 | `GET` | `/api/nexo/stream` | Transmisión en tiempo real de respuestas RAG vía SSE |
 | `POST` | `/api/nexo/query` | Endpoint sincrónico para consultas RAG |
 
@@ -256,7 +256,7 @@ La CLI de `nexonotes` simplifica la gestión de contenedores en Linux, macOS y W
 
 ```
 NexoNotes/
-├── LICENSE.md            # Licencia de Software Libre No Comercial
+├── LICENSE.md            # Licencia de Código Abierto No Comercial
 ├── .env.example          # Plantilla de variables de entorno
 ├── docker-compose.yml    # Orquestación multicontenedor (db, backend, frontend)
 ├── nexonotes             # Script ejecutable CLI para Linux / macOS / Git Bash
@@ -266,7 +266,7 @@ NexoNotes/
 ├── logo.png              # Logotipo oficial del sistema
 ├── README.md             # Documentación principal en Español
 ├── README_en.md          # Documentación en Inglés
-├── backend/              # Servicio FastAPI con pgvector y pipeline RAG
+├── backend/              # Servicio FastAPI con pgvector, MarkItDown y pipeline RAG
 │   ├── Dockerfile
 │   ├── requirements.txt
 │   └── app/
@@ -289,6 +289,7 @@ NexoNotes/
         └── components/
             ├── AsciiNexo.tsx
             ├── CyberIcons.tsx
+            ├── CyberTooltip.tsx
             ├── FolderTree.tsx
             ├── Header.tsx
             ├── MarkdownEditor.tsx
@@ -307,7 +308,7 @@ Este proyecto es software libre y de código abierto bajo los términos de la li
 - **Uso Permitido:** Eres libre de descargar, compilar, estudiar, modificar, adaptar y distribuir este proyecto para fines personales, educativos, de investigación o de gestión interna.
 - **Restricción Comercial:** Queda estrictamente prohibido vender, sublicenciar, revender o comercializar este software o sus derivados como un producto o servicio de venta cerrado con fines de lucro comercial directo.
 
-Para consultas de licenciamiento empresarial o comercial, comunícate con el equipo de **Nexus Studio**.
+Para consultas sobre licenciamiento o adaptaciones a medida, comunícate con el equipo de **Nexus Studio**.
 
 ---
 
