@@ -93,7 +93,7 @@ export function App() {
           </a>
         </div>
         <div className="hidden lg:flex items-center gap-2 text-nexo-600 text-[10px]">
-          <span>SHORTCUTS: [F1] NOTAS │ [F2] NEXO │ [ALT+N] +NOTA │ [ALT+F] +CARPETA │ [SUPR] BORRAR │ [CTRL+C/V] COPIAR/PEGAR</span>
+          <span>SHORTCUTS: [F1] NOTAS │ [F2] NEXO │ [ALT+N] +NOTA │ [ALT+F] +CARPETA │ [ALT+R] RENOMBRAR │ [SUPR] BORRAR │ [CTRL+C/V] COPIAR/PEGAR</span>
         </div>
       </footer>
     </div>
