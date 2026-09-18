@@ -593,11 +593,18 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
   return (
     <div className="w-full h-full bg-nexo-950 border-r border-nexo-800 flex flex-col font-mono text-xs select-none">
       {/* Explorer Top Toolbar */}
-      <div className="bg-nexo-900 px-2.5 py-1.5 border-b border-nexo-850 flex items-center justify-between gap-2 shrink-0">
-        <span className="font-bold text-nexo-300 text-[11px] uppercase tracking-wider shrink-0">
-          {t.explorerTitle}
-        </span>
-        <div className="flex items-center gap-1.5 flex-1 justify-end">
+      <div className="bg-nexo-900 px-2 py-1.5 border-b border-nexo-850 flex items-center justify-between gap-2 shrink-0">
+        <div className="font-bold text-nexo-300 text-[10px] uppercase tracking-wider shrink-0 leading-tight flex flex-col select-none">
+          {t.explorerTitle.includes('//') ? (
+            <>
+              <span>{t.explorerTitle.split('//')[0].trim()}</span>
+              <span className="text-nexo-500 text-[9px]">// {t.explorerTitle.split('//')[1].trim()}</span>
+            </>
+          ) : (
+            <span>{t.explorerTitle}</span>
+          )}
+        </div>
+        <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
           <button
             type="button"
             onClick={() => onCreateNote(selectedFolder || null)}
