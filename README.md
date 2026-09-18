@@ -144,7 +144,7 @@ Accede a la interfaz web en **`http://localhost:3780`**.
 ## Características Principales
 
 - **Explorador Jerárquico & Drag & Drop:** Árbol de archivos real estilo IDE con soporte para arrastrar notas y carpetas (incluyendo soltar en la raíz `/` o desde el explorador del sistema operativo).
-- **Gestión & Edición Completa:** Creación, eliminación, copia/pegado y renombrado de notas y carpetas en tiempo real (`Alt+R` o menú contextual `...`) con persistencia en la base de datos.
+- **Gestión & Edición Completa:** Creación, eliminación, copia/pegado y renombrado de notas y carpetas en tiempo real con persistencia en la base de datos.
 - **Búsqueda & Filtro de Etiquetas:** Búsqueda autónoma por título, contenido y múltiples etiquetas (`#etiqueta`) con apertura automática de carpetas coincidentes.
 - **Editor & Lectura Markdown:** Visualización a pantalla completa, editor interactivo con vista previa y renderizado de código y fórmulas LaTeX.
 - **Importación Inteligente (MarkItDown):** Soporte para archivos `.md`, `.txt`, Word (`.docx`), PDF (`.pdf`) y `.zip` con conversión automatizada a Markdown mediante Microsoft MarkItDown.
