@@ -206,6 +206,7 @@ The `nexonotes` CLI simplifies container management across Linux, macOS, and Win
   - `[F2]`: Switch to Nexo Console
   - `[ALT+N]`: New note
   - `[ALT+F]`: New folder
+  - `[ALT+R]`: Rename selected note or folder
   - `[SUPR] / [DELETE]`: Delete selected item
   - `[CTRL+C] / [CTRL+V]`: Copy and paste items
 - **Source Code Access:** Footer button with official GitHub icon linking directly to the repository.

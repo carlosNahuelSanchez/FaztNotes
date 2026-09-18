@@ -206,6 +206,7 @@ La CLI de `nexonotes` simplifica la gestión de contenedores en Linux, macOS y W
   - `[F2]`: Cambiar a Consola Nexo
   - `[ALT+N]`: Crear nueva nota
   - `[ALT+F]`: Crear nueva carpeta
+  - `[ALT+R]`: Renombrar nota o carpeta seleccionada
   - `[SUPR] / [DELETE]`: Eliminar nota o carpeta seleccionada
   - `[CTRL+C] / [CTRL+V]`: Copiar y pegar notas o carpetas
 - **Acceso al Código Fuente:** Botón en el pie de página con el ícono oficial de GitHub y enlace directo al repositorio.

@@ -115,7 +115,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
         setRenamingNoteId(null);
         setRenamingFolderPath(null);
       }
-      if (e.key === 'F2') {
+      if (e.altKey && !e.ctrlKey && !e.metaKey && e.key.toLowerCase() === 'r') {
         const target = e.target as HTMLElement;
         const isInput = (
           target.tagName === 'INPUT' ||
