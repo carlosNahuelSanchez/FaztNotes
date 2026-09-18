@@ -8,7 +8,7 @@
 *Technical Document Management, Local RAG Engine & MCP Server*
 
 [![Spanish Documentation](https://img.shields.io/badge/Language-Español-red.svg)](README.md)
-[![License: PolyForm Noncommercial](https://img.shields.io/badge/License-NonCommercial_Open_Source-green.svg)](LICENSE.md)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE.md)
 [![Docker Compose](https://img.shields.io/badge/Docker_Compose-24%2B-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100%2B-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16%20%2B%20pgvector-4169E1?style=flat-square&logo=postgresql&logoColor=white)](https://github.com/pgvector/pgvector)
@@ -17,7 +17,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Google Gemini](https://img.shields.io/badge/Google_Gemini-8E7CC3?style=flat-square&logo=google&logoColor=white)](https://ai.google.dev/)
 
-[Overview](#overview) • [Architecture](#architecture) • [Ports](#ports) • [Quick Start](#quick-start) • [CLI Commands](#cli-commands) • [MCP Integration](#mcp-integration) • [User Guide](#user-guide) • [API Reference](#api-reference) • [Structure](#project-structure) • [License](#license)
+[Overview](#overview) • [Architecture](#architecture) • [Ports](#ports) • [Quick Start](#quick-start) • [CLI Commands](#cli-commands) • [MCP Integration](#mcp-integration) • [User Guide](#user-guide) • [API](#api-reference)
 
 </div>
 
@@ -25,9 +25,9 @@
 
 ## Overview
 
-**NexoNotes** is an autonomous, self-hosted technical document management system with an integrated **Retrieval-Augmented Generation (RAG)** engine and a native **Model Context Protocol (MCP)** server, fully containerized via Docker.
+**NexoNotes** is an autonomous, self-hosted technical document management system with an integrated **Retrieval-Augmented Generation (RAG)** engine and a native **Model Context Protocol (MCP)** server, fully containerized with Docker.
 
-It stores all notes locally in PostgreSQL and computes 768-dimensional vector embeddings with `pgvector`. It lets you organize your technical knowledge base, query it via an interactive assistant with citations, and connect it directly to external AI agents (Antigravity, Cursor, Claude Desktop, Claude Code, Windsurf, OpenCode).
+It stores all notes locally in PostgreSQL and computes 768-dimensional vector embeddings with `pgvector`. It lets you organize your technical knowledge base, query it via an interactive assistant, and expose tools to external AI agents.
 
 ---
 
@@ -234,6 +234,8 @@ NexoNotes/
 ├── nexonotes.bat         # Entry script for Windows CMD
 ├── README.md             # Documentation in Spanish
 ├── README_en.md          # Documentation in English
+├── LICENSE.md            # Apache License 2.0
+├── NOTICE                # License attribution notice
 ├── backend/              # FastAPI API, pgvector, and RAG engine
 │   ├── app/
 │   │   ├── main.py       # API routes and health endpoints
@@ -259,7 +261,9 @@ NexoNotes/
 
 ## License
 
-This project is open-source software released under the **[PolyForm Noncommercial License 1.0.0](LICENSE.md)**. Personal, educational, research, and internal organizational use is permitted. Direct commercial resale is strictly prohibited.
+This project is distributed under the **[Apache License 2.0](LICENSE.md)**. The full license text is included in `LICENSE.md`, and the attribution notice is provided in `NOTICE` to satisfy the requirements of the Apache License 2.0.
+
+Commercial and non-commercial use, modification, and distribution are permitted under the terms of the Apache License 2.0, provided all copyright, patent, and attribution notices are preserved.
 
 ---
 
