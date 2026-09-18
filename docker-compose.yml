@@ -33,6 +33,7 @@ services:
       POSTGRES_HOST: db
       POSTGRES_PORT: 5432
       LLM_MODEL: ${LLM_MODEL:-gemini-3.5-flash-lite}
+      WEBHOOK_URL: ${WEBHOOK_URL:-}
     ports:
       - "${BACKEND_PORT:-8780}:8000"
     depends_on:
@@ -55,6 +56,24 @@ services:
       - "${FRONTEND_PORT:-3780}:80"
     depends_on:
       backend:
+        condition: service_healthy
+
+  # ponytail: same image, different entrypoint — zero extra build
+  mcp:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: nexonotes-mcp
+    restart: unless-stopped
+    command: ["python", "-m", "app.mcp_server"]
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-nexonotes_admin}:${POSTGRES_PASSWORD:-nexonotes_secure_pass}@db:5432/${POSTGRES_DB:-nexonotes_db}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      LLM_MODEL: ${LLM_MODEL:-gemini-3.5-flash-lite}
+    ports:
+      - "8781:8781"
+    depends_on:
+      db:
         condition: service_healthy
 
 volumes:

@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     llm_model: str = "gemini-3.5-flash-lite"
     backend_port: int = 8780
     frontend_port: int = 3780
+    webhook_url: str = ""
 
     model_config = SettingsConfigDict(
         env_file=".env",

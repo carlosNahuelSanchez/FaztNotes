@@ -13,6 +13,7 @@ from app.database import get_db
 from app.models import Note
 from app.schemas import NoteCreate, NoteUpdate, NoteResponse, NoteImportResult, FolderRenamePayload
 from app.services.rag import sync_note_embedding
+from app.services.webhook import fire_webhook
 
 logger = logging.getLogger("nexonotes.notes")
 router = APIRouter(prefix="/api/notes", tags=["Notes"])
@@ -222,6 +223,7 @@ def create_note(payload: NoteCreate, db: Session = Depends(get_db)):
     _, emb_err = sync_note_embedding(db, new_note)
     db.refresh(new_note)
 
+    fire_webhook("note.created", {"id": new_note.id, "title": new_note.title})
     return to_note_response(new_note, embedding_error=emb_err)
 
 
@@ -444,6 +446,7 @@ def update_note(note_id: str, payload: NoteUpdate, db: Session = Depends(get_db)
             _, emb_err = sync_note_embedding(db, note)
             db.refresh(note)
 
+    fire_webhook("note.updated", {"id": note_id, "title": note.title})
     return to_note_response(note, embedding_error=emb_err)
 
 
@@ -498,6 +501,7 @@ def delete_folder(
         db.delete(note)
     db.commit()
 
+    fire_webhook("folder.deleted", {"folder": clean_folder, "notes_deleted": count})
     return {"status": "ok", "deleted_folder": clean_folder, "notes_deleted": count}
 
 
@@ -510,6 +514,8 @@ def delete_note(note_id: str, db: Session = Depends(get_db)):
             detail=f"Nota con ID '{note_id}' no encontrada."
         )
 
+    title = note.title
     db.delete(note)
     db.commit()
+    fire_webhook("note.deleted", {"id": note_id, "title": title})
     return {"status": "ok", "deleted_id": note_id}
