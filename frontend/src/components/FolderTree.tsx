@@ -593,7 +593,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
   return (
     <div className="w-full h-full bg-nexo-950 border-r border-nexo-800 flex flex-col font-mono text-xs select-none">
       {/* Explorer Top Toolbar */}
-      <div className="bg-nexo-900 px-2 py-1.5 border-b border-nexo-850 flex items-center justify-between gap-2 shrink-0">
+      <div className="bg-nexo-900 px-2 py-1.5 border-b border-nexo-850 flex items-center justify-between gap-2 shrink-0 relative z-30">
         <div className="font-bold text-nexo-300 text-[10px] uppercase tracking-wider shrink-0 leading-tight flex flex-col select-none">
           {t.explorerTitle.includes('//') ? (
             <>
@@ -625,7 +625,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
           >
             {t.createFolderBtn}
           </button>
-          <CyberTooltip text={t.importHint} position="bottom">
+          <CyberTooltip text={t.importHint} position="bottom" align="right">
             <button
               type="button"
               onClick={() => triggerImport(selectedFolder || null)}
@@ -636,7 +636,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
             </button>
           </CyberTooltip>
           {onExportFolder && (
-            <CyberTooltip text={t.exportAll} position="bottom">
+            <CyberTooltip text={t.exportAll} position="bottom" align="right">
               <button
                 type="button"
                 onClick={() => onExportFolder(null)}

@@ -689,9 +689,9 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
       )}
 
       {/* 2-Panel IDE Workspace Layout */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Left Panel: IDE Explorer (VS Code style file tree) */}
-        <div className="w-72 md:w-80 shrink-0 h-full overflow-hidden flex flex-col bg-nexo-950">
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Left Panel: IDE Explorer (VS Code style file tree with z-20 so tooltips/popups overlay on top of right panel) */}
+        <div className="w-72 md:w-80 shrink-0 h-full flex flex-col bg-nexo-950 relative z-20">
           <FolderTree
             notes={displayedNotes}
             folders={folders}
@@ -724,7 +724,7 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
         </div>
 
         {/* Right Panel: Note Viewer / Editor Area */}
-        <div className="flex-1 h-full overflow-hidden flex flex-col bg-nexo-950">
+        <div className="flex-1 h-full overflow-hidden flex flex-col bg-nexo-950 relative z-10">
           {isEditing ? (
             /* Editing / Creating Mode */
             <div className="flex-1 flex flex-col h-full overflow-hidden">

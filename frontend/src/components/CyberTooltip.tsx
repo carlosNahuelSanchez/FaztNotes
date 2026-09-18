@@ -6,6 +6,7 @@ interface CyberTooltipProps {
   children: React.ReactNode;
   className?: string;
   position?: 'top' | 'bottom';
+  align?: 'center' | 'left' | 'right';
   maxWidth?: string;
 }
 
@@ -16,6 +17,7 @@ export const CyberTooltip: React.FC<CyberTooltipProps> = ({
   children,
   className = '',
   position = 'bottom',
+  align = 'center',
   maxWidth
 }) => {
   const [isHovered, setIsHovered] = useState(false);
@@ -61,6 +63,19 @@ export const CyberTooltip: React.FC<CyberTooltipProps> = ({
   }, [isHovered, text]);
 
   const isBottom = position === 'bottom';
+  const alignClass =
+    align === 'right'
+      ? 'right-0 translate-x-0'
+      : align === 'left'
+      ? 'left-0 translate-x-0'
+      : 'left-1/2 -translate-x-1/2';
+
+  const arrowAlignClass =
+    align === 'right'
+      ? 'right-2.5 translate-x-0'
+      : align === 'left'
+      ? 'left-2.5 translate-x-0'
+      : 'left-1/2 -translate-x-1/2';
 
   return (
     <div
@@ -72,7 +87,7 @@ export const CyberTooltip: React.FC<CyberTooltipProps> = ({
         <div
           className={`absolute ${
             isBottom ? 'top-full mt-2' : 'bottom-full mb-2'
-          } left-1/2 -translate-x-1/2 z-50 pointer-events-none ${
+          } ${alignClass} z-50 pointer-events-none ${
             maxWidth ? `${maxWidth} whitespace-normal text-left leading-tight` : 'whitespace-nowrap'
           } bg-black/95 border border-emerald-500/80 text-emerald-300 font-mono text-[10px] px-2 py-1 shadow-xl shadow-emerald-950/60 flex items-start gap-1`}
         >
@@ -82,7 +97,7 @@ export const CyberTooltip: React.FC<CyberTooltipProps> = ({
           <div
             className={`absolute ${
               isBottom ? 'bottom-full border-b-emerald-500/80' : 'top-full border-t-emerald-500/80'
-            } left-1/2 -translate-x-1/2 border-4 border-transparent w-0 h-0`}
+            } ${arrowAlignClass} border-4 border-transparent w-0 h-0`}
           />
         </div>
       )}
