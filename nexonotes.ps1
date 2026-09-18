@@ -43,7 +43,8 @@ switch ($Action) {
         } else {
             Write-Host "[ESTADO: INICIANDO] Backend aun completando verificacion."
         }
-        Write-Host "  - Frontend UI:    http://localhost:3780"
+        Write-Host ""
+        Write-Host "  >> Tu aplicacion NexoNotes esta lista en: http://localhost:3780"
         Write-Host "  - Backend API:    http://localhost:8780"
         Write-Host "  - Documentacion:  http://localhost:8780/docs"
         Write-Host "  - Base de Datos:  localhost:5432 (pgvector activo)"
@@ -53,7 +54,9 @@ switch ($Action) {
     "stop" {
         Write-Host "[NEXONOTES-SYS] Deteniendo contenedores de forma limpia..."
         docker compose down
-        Write-Host "[NEXONOTES-SYS] Sistema detenido."
+        Write-Host "------------------------------------------------------------"
+        Write-Host "[NEXONOTES-SYS] El sistema NexoNotes ha sido detenido correctamente."
+        Write-Host "------------------------------------------------------------"
     }
 
     "logs" {

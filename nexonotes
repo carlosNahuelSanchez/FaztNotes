@@ -54,7 +54,8 @@ case "$1" in
     else
       echo "[ESTADO: DEGRADADO / INICIANDO] Backend aun no reporta salud completa."
     fi
-    echo "  - Frontend UI:    http://localhost:${FRONTEND_PORT}"
+    echo ""
+    echo "  >> Tu aplicacion NexoNotes esta lista en: http://localhost:${FRONTEND_PORT}"
     echo "  - Backend API:    http://localhost:${BACKEND_PORT}"
     echo "  - Documentacion:  http://localhost:${BACKEND_PORT}/docs"
     echo "  - Base de Datos:  localhost:${POSTGRES_PORT} (pgvector activo)"
@@ -64,7 +65,9 @@ case "$1" in
   stop)
     echo "[NEXONOTES-SYS] Deteniendo contenedores de forma limpia..."
     docker compose down
-    echo "[NEXONOTES-SYS] Sistema detenido."
+    echo "------------------------------------------------------------"
+    echo "[NEXONOTES-SYS] El sistema NexoNotes ha sido detenido correctamente."
+    echo "------------------------------------------------------------"
     ;;
 
   logs)
