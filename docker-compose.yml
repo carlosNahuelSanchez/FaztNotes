@@ -2,7 +2,7 @@ services:
   db:
     image: pgvector/pgvector:pg16
     container_name: nexonotes-db
-    restart: unless-stopped
+    restart: always
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-nexonotes_db}
       POSTGRES_USER: ${POSTGRES_USER:-nexonotes_admin}
@@ -23,7 +23,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: nexonotes-backend
-    restart: unless-stopped
+    restart: always
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-nexonotes_admin}:${POSTGRES_PASSWORD:-nexonotes_secure_pass}@db:5432/${POSTGRES_DB:-nexonotes_db}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
@@ -50,7 +50,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: nexonotes-frontend
-    restart: unless-stopped
+    restart: always
     ports:
       - "${FRONTEND_PORT:-3780}:80"
     depends_on:
