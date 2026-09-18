@@ -196,6 +196,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
 
   const handleDragOver = (e: React.DragEvent, folderKey: string) => {
     e.preventDefault();
+    e.stopPropagation();
     e.dataTransfer.dropEffect = 'move';
     setDragOverFolder(folderKey);
   };
@@ -695,8 +696,30 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
         </form>
       )}
 
-      {/* IDE Tree Content Area */}
-      <div className="flex-1 overflow-y-auto p-1 space-y-0.5">
+      {/* IDE Tree Content Area: acts as root drop target when dragging over root space */}
+      <div
+        onDragOver={(e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          if (!dragOverFolder || dragOverFolder === '__root__') {
+            setDragOverFolder('__root__');
+          }
+        }}
+        onDragLeave={(e) => {
+          if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+          setDragOverFolder(null);
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragOverFolder(null);
+          handleDrop(e, null);
+        }}
+        className={`flex-1 overflow-y-auto p-1.5 space-y-0.5 transition-colors ${
+          dragOverFolder === '__root__'
+            ? 'bg-emerald-950/25 ring-2 ring-emerald-500/80 ring-inset'
+            : ''
+        }`}
+      >
         {/* Render Root Folders */}
         {Array.from(tree.subfolders.values()).map((folderNode) => renderFolderNode(folderNode, 0))}
 
@@ -708,20 +731,6 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
             {t.emptyExplorer}
           </div>
         )}
-      </div>
-
-      {/* Root Drag & Drop Zone at bottom */}
-      <div
-        onDragOver={(e) => handleDragOver(e, '__root__')}
-        onDragLeave={handleDragLeave}
-        onDrop={(e) => handleDrop(e, null)}
-        className={`p-2 border-t text-center text-[10px] font-mono transition-colors shrink-0 ${
-          dragOverFolder === '__root__'
-            ? 'bg-emerald-950/60 border-emerald-400 text-emerald-300 font-bold'
-            : 'border-nexo-850 text-nexo-600 hover:text-nexo-400'
-        }`}
-      >
-        {dragOverFolder === '__root__' ? t.dropHere : t.rootDropZone}
       </div>
     </div>
   );
