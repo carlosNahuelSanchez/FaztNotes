@@ -32,7 +32,7 @@
 
 **NexoNotes** es un sistema autónomo y privado de gestión de documentación técnica con un motor **RAG (Retrieval-Augmented Generation)** integrado y servidor nativo **MCP (Model Context Protocol)**, contenerizado de forma completa mediante Docker.
 
-Diseñado específicamente para desarrolladores e ingenieros de software, NexoNotes destaca por su **estética Hacker / Matrix CLI**, su velocidad instantánea y su capacidad de conectar tu base de conocimiento local tanto a un asistente interactivo propio como a cualquier agente externo de IA (Antigravity, Cursor, Claude Desktop, Windsurf) a través de MCP.
+Diseñado específicamente para desarrolladores e ingenieros de software, con una interfaz similar a un IDE o CLI. Posee velocidad instantánea y capacidad de conectar tu base de conocimiento local tanto a un asistente interactivo propio como a cualquier agente externo de IA (Antigravity, Cursor, Claude Desktop, Windsurf) a través de MCP.
 
 > [!IMPORTANT]
 > Todas las notas se almacenan localmente en PostgreSQL y se vectorizan automáticamente en embeddings de 768 dimensiones utilizando `pgvector`. Tus datos permanecen 100% bajo tu control, sin delegar vectores ni documentos a servicios en la nube de terceros.
