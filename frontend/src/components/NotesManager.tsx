@@ -24,6 +24,8 @@ interface NotesManagerProps {
   onDataChanged: () => void;
 }
 
+const GLYPHS = "!<>-_\\/[]{}—=+*^?#_$%&01";
+
 export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => {
   const { t } = useI18n();
   const [notes, setNotes] = useState<Note[]>([]);
@@ -50,26 +52,122 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
     text: string;
     type: 'loading' | 'success' | 'error';
   } | null>(null);
+  const [glitchText, setGlitchText] = useState<string | null>(null);
+  const currentStatusRef = useRef<{
+    text: string;
+    type: 'loading' | 'success' | 'error';
+  } | null>(null);
+  const statusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const glitchIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [systemError, setSystemError] = useState<string | null>(null);
   const [importWarnings, setImportWarnings] = useState<string[]>([]);
 
+  const triggerGlitchClear = useCallback(() => {
+    if (statusTimerRef.current) {
+      clearTimeout(statusTimerRef.current);
+      statusTimerRef.current = null;
+    }
+    if (glitchIntervalRef.current) {
+      clearInterval(glitchIntervalRef.current);
+      glitchIntervalRef.current = null;
+    }
+
+    const current = currentStatusRef.current;
+    if (!current) {
+      setStatus(null);
+      setGlitchText(null);
+      return;
+    }
+
+    const original = current.text;
+    let frame = 0;
+    const totalFrames = 10;
+
+    glitchIntervalRef.current = setInterval(() => {
+      frame++;
+      const progress = frame / totalFrames;
+
+      if (frame >= totalFrames) {
+        if (glitchIntervalRef.current) clearInterval(glitchIntervalRef.current);
+        glitchIntervalRef.current = null;
+        currentStatusRef.current = null;
+        setStatus(null);
+        setGlitchText(null);
+      } else {
+        setGlitchText(
+          original
+            .split('')
+            .map((char, idx) => {
+              if (char === ' ') return ' ';
+              if (idx / original.length > 1 - progress) {
+                return '';
+              }
+              return GLYPHS[Math.floor(Math.random() * GLYPHS.length)];
+            })
+            .join('')
+        );
+      }
+    }, 32);
+  }, []);
+
   const setStatusMessage = useCallback((msg: string | null, type?: 'loading' | 'success' | 'error') => {
+    if (statusTimerRef.current) {
+      clearTimeout(statusTimerRef.current);
+      statusTimerRef.current = null;
+    }
+    if (glitchIntervalRef.current) {
+      clearInterval(glitchIntervalRef.current);
+      glitchIntervalRef.current = null;
+    }
+    setGlitchText(null);
+
     if (!msg) {
+      currentStatusRef.current = null;
       setStatus(null);
       return;
     }
-    if (type) {
-      setStatus({ text: msg, type });
-      return;
+
+    let calculatedType: 'loading' | 'success' | 'error' = type || 'success';
+    if (!type) {
+      const lower = msg.toLowerCase();
+      if (
+        lower.includes('[fail]') ||
+        lower.includes('[error]') ||
+        lower.includes('falló') ||
+        lower.includes('fallo') ||
+        lower.includes('error') ||
+        lower.includes('no se puede')
+      ) {
+        calculatedType = 'error';
+      } else if (
+        lower.includes('cargando') ||
+        lower.includes('guardando') ||
+        lower.includes('procesando') ||
+        lower.includes('importando') ||
+        lower.includes('eliminando') ||
+        lower.includes('pegando') ||
+        lower.includes('moviendo')
+      ) {
+        calculatedType = 'loading';
+      }
     }
-    const lower = msg.toLowerCase();
-    if (lower.includes('[fail]') || lower.includes('[error]') || lower.includes('falló') || lower.includes('fallo') || lower.includes('error')) {
-      setStatus({ text: msg, type: 'error' });
-    } else if (lower.includes('cargando') || lower.includes('guardando') || lower.includes('procesando') || lower.includes('importando') || lower.includes('eliminando') || lower.includes('pegando')) {
-      setStatus({ text: msg, type: 'loading' });
-    } else {
-      setStatus({ text: msg, type: 'success' });
+
+    const newStatus = { text: msg, type: calculatedType };
+    currentStatusRef.current = newStatus;
+    setStatus(newStatus);
+
+    if (calculatedType !== 'loading') {
+      statusTimerRef.current = setTimeout(() => {
+        triggerGlitchClear();
+      }, 5000);
     }
+  }, [triggerGlitchClear]);
+
+  useEffect(() => {
+    return () => {
+      if (statusTimerRef.current) clearTimeout(statusTimerRef.current);
+      if (glitchIntervalRef.current) clearInterval(glitchIntervalRef.current);
+    };
   }, []);
 
   const loadData = useCallback(async () => {
@@ -424,16 +522,6 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
           }
           return;
         }
-        if (e.key.toLowerCase() === 'i') {
-          e.preventDefault();
-          emptyStateFileRef.current?.click();
-          return;
-        }
-        if (e.key.toLowerCase() === 'e') {
-          e.preventDefault();
-          handleExportFolder(null);
-          return;
-        }
       }
 
       // Contextual shortcuts when not actively editing text
@@ -518,38 +606,60 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
         </div>
       )}
 
-      {/* Global Status Banner (subtle feedback: grey for loading, green for success, red for error) */}
-      {status && (
-        <div
-          className={`border-b px-3 py-1.5 font-mono text-[11px] flex justify-between items-center shrink-0 transition-colors ${
-            status.type === 'loading'
-              ? 'bg-neutral-900 border-neutral-700 text-neutral-400'
+      {/* Permanent System Status Line: always visible with [SYSTEM], shows real-time events and clears with cyber-glitch after 5s */}
+      <div
+        className={`border-b px-3 py-1 font-mono text-[11px] flex justify-between items-center shrink-0 transition-colors duration-200 ${
+          status
+            ? status.type === 'loading'
+              ? 'bg-neutral-900 border-neutral-700 text-neutral-300'
               : status.type === 'error'
-              ? 'bg-red-950/80 border-red-500/60 text-red-400'
-              : 'bg-emerald-950/80 border-emerald-500/60 text-emerald-400'
-          }`}
-        >
-          <span className="flex items-center gap-2">
-            {status.type === 'loading' && (
-              <span className="inline-block w-2 h-2 rounded-full bg-neutral-400 animate-pulse shrink-0" />
-            )}
-            {status.type === 'success' && (
-              <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
-            )}
-            {status.type === 'error' && (
-              <span className="inline-block w-2 h-2 rounded-full bg-red-400 shrink-0" />
-            )}
-            <span>{status.text}</span>
+              ? 'bg-red-950/80 border-red-500/60 text-red-300'
+              : 'bg-emerald-950/80 border-emerald-500/60 text-emerald-300'
+            : 'bg-nexo-950 border-nexo-850 text-nexo-500'
+        }`}
+      >
+        <div className="flex items-center gap-2 overflow-hidden flex-1 min-w-0">
+          <span className="font-bold tracking-wider shrink-0 flex items-center gap-1.5 select-none">
+            <span
+              className={`inline-block w-1.5 h-1.5 rounded-full ${
+                status
+                  ? status.type === 'loading'
+                    ? 'bg-neutral-400 animate-pulse'
+                    : status.type === 'error'
+                    ? 'bg-red-400'
+                    : 'bg-emerald-400'
+                  : 'bg-emerald-600/60'
+              }`}
+            />
+            <span>
+              {status
+                ? status.type === 'loading'
+                  ? '[SYSTEM: CARGANDO]'
+                  : status.type === 'error'
+                  ? '[SYSTEM: FALLO]'
+                  : '[SYSTEM: OK]'
+                : '[SYSTEM]'}
+            </span>
           </span>
+          <span className="truncate font-mono">
+            {glitchText !== null
+              ? glitchText
+              : status
+              ? status.text
+              : t.systemIdle}
+          </span>
+        </div>
+        {status && (
           <button
             type="button"
-            onClick={() => setStatusMessage(null)}
-            className="opacity-70 hover:opacity-100 text-xs px-1 font-mono cursor-pointer"
+            onClick={triggerGlitchClear}
+            className="opacity-70 hover:opacity-100 text-xs px-1 font-mono cursor-pointer shrink-0 ml-2"
+            title="Descartar mensaje"
           >
             [X]
           </button>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Discarded Files Warning Banner (ZIP / Import verification) */}
       {importWarnings.length > 0 && (
