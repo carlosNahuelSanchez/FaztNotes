@@ -519,15 +519,6 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
           setIsEditing(true);
           return;
         }
-        if (e.key.toLowerCase() === 'f' || e.key.toLowerCase() === 'c') {
-          e.preventDefault();
-          const name = prompt('Nombre de la nueva carpeta:');
-          if (name && name.trim()) {
-            const fullPath = selectedFolder ? `${selectedFolder}/${name.trim()}` : name.trim();
-            handleCreateFolder(fullPath);
-          }
-          return;
-        }
       }
 
       // Contextual shortcuts when not actively editing text

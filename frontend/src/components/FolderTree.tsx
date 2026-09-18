@@ -86,6 +86,28 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
       if (e.key === 'Escape') {
         setActiveMenuFolder(null);
         setActiveMenuNote(null);
+        setIsCreatingRootFolder(false);
+        setCreatingSubFor(null);
+      }
+      if (e.altKey && !e.ctrlKey && !e.metaKey && (e.key.toLowerCase() === 'f' || e.key.toLowerCase() === 'c')) {
+        const target = e.target as HTMLElement;
+        const isInput = (
+          target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable
+        );
+        if (!isInput) {
+          e.preventDefault();
+          if (selectedFolder) {
+            setCreatingSubFor((prev) => (prev === selectedFolder ? null : selectedFolder));
+            setCollapsed((prev) => ({ ...prev, [selectedFolder]: false }));
+            setIsCreatingRootFolder(false);
+          } else {
+            setIsCreatingRootFolder((prev) => !prev);
+            setCreatingSubFor(null);
+          }
+          setNewFolderName('');
+        }
       }
     };
     window.addEventListener('click', handleOutsideClick);
@@ -94,7 +116,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
       window.removeEventListener('click', handleOutsideClick);
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, []);
+  }, [selectedFolder]);
 
   // ponytail: Build true hierarchical IDE file tree in a single pass
   const tree = useMemo(() => {
