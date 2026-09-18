@@ -63,7 +63,20 @@ const translations = {
     folderOptCreateFolder: 'Create folder',
     folderOptImport: 'Import',
     folderOptExport: 'Export',
+    folderOptCopy: 'Copy folder',
+    folderOptPaste: 'Paste here',
     folderOptDelete: 'Delete folder',
+
+    // Note context menu options
+    noteOptOpen: 'Open / View',
+    noteOptCopy: 'Copy note',
+    noteOptExport: 'Export (.md)',
+    noteOptDelete: 'Delete note',
+
+    // Clipboard & Shortcuts
+    itemCopied: "[CLIPBOARD] Copied: {name}",
+    itemPasted: "[SYSTEM] Pasted successfully to: {target}",
+    clipboardEmpty: "[CLIPBOARD] Clipboard is empty",
 
     // Deletion Modal
     deleteTitle: '[CONFIRMATION]',
@@ -194,7 +207,20 @@ const translations = {
     folderOptCreateFolder: 'Crear carpeta',
     folderOptImport: 'Importar',
     folderOptExport: 'Exportar',
+    folderOptCopy: 'Copiar carpeta',
+    folderOptPaste: 'Pegar aquí',
     folderOptDelete: 'Eliminar carpeta',
+
+    // Note context menu options
+    noteOptOpen: 'Abrir / Ver',
+    noteOptCopy: 'Copiar nota',
+    noteOptExport: 'Exportar (.md)',
+    noteOptDelete: 'Eliminar nota',
+
+    // Clipboard & Shortcuts
+    itemCopied: "[PORTAPAPELES] Copiado: {name}",
+    itemPasted: "[SISTEMA] Pegado exitoso en: {target}",
+    clipboardEmpty: "[PORTAPAPELES] El portapapeles está vacío",
 
     // Deletion Modal
     deleteTitle: '[CONFIRMACION]',

@@ -30,7 +30,14 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
   const [tags, setTags] = useState<string[]>([]);
   const [folders, setFolders] = useState<string[]>([]);
   const [customFolders, setCustomFolders] = useState<string[]>([]);
-  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
+  const [clipboard, setClipboard] = useState<{
+    type: 'note' | 'folder';
+    data?: Note;
+    path?: string;
+    name: string;
+  } | null>(null);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [targetFolderForNewNote, setTargetFolderForNewNote] = useState<string | null>(null);
@@ -47,7 +54,7 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
     try {
       setLoading(true);
       const [notesData, tagsData, foldersData] = await Promise.all([
-        fetchNotes(undefined, selectedTag || undefined, undefined),
+        fetchNotes(),
         fetchTags(),
         fetchFolders()
       ]);
@@ -69,11 +76,18 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
     } finally {
       setLoading(false);
     }
-  }, [selectedTag, selectedNote, customFolders, t.errorLoading]);
+  }, [selectedNote, customFolders, t.errorLoading]);
 
   useEffect(() => {
     loadData();
-  }, [selectedTag]);
+  }, []);
+
+  const displayedNotes = useMemo(() => {
+    if (selectedTags.length === 0) return notes;
+    return notes.filter((n) =>
+      selectedTags.some((tag) => (n.tags || []).includes(tag))
+    );
+  }, [notes, selectedTags]);
 
   // Save handler: saves to database and checks for embedding / Gemini errors
   const handleSaveNote = async (payload: NoteCreatePayload, id?: string) => {
@@ -288,37 +302,190 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
     }
   };
 
+  const handleCopyNote = useCallback((note: Note) => {
+    setClipboard({
+      type: 'note',
+      data: note,
+      name: `${note.title}.md`
+    });
+    setStatusMessage(t.itemCopied.replace('{name}', `${note.title}.md`));
+  }, [t.itemCopied]);
+
+  const handleCopyFolder = useCallback((folderPath: string) => {
+    setClipboard({
+      type: 'folder',
+      path: folderPath,
+      name: `/${folderPath}`
+    });
+    setStatusMessage(t.itemCopied.replace('{name}', `/${folderPath}`));
+  }, [t.itemCopied]);
+
+  const handlePaste = useCallback(async (targetFolder: string | null) => {
+    if (!clipboard) {
+      setStatusMessage(t.clipboardEmpty);
+      return;
+    }
+    const dest = targetFolder !== undefined ? targetFolder : selectedFolder;
+    try {
+      if (clipboard.type === 'note' && clipboard.data) {
+        const isSameFolder = (clipboard.data.folder || null) === (dest || null);
+        const newTitle = isSameFolder ? `${clipboard.data.title} (copia)` : clipboard.data.title;
+        await handleSaveNote({
+          title: newTitle,
+          content: clipboard.data.content,
+          tags: clipboard.data.tags,
+          folder: dest || null
+        });
+        setStatusMessage(t.itemPasted.replace('{target}', dest ? `/${dest}` : t.noFolderRoot));
+      } else if (clipboard.type === 'folder' && clipboard.path) {
+        const srcPath = clipboard.path;
+        const folderName = srcPath.split('/').pop() || 'copia';
+        const destFolder = dest
+          ? `${dest}/${folderName}`
+          : (srcPath === folderName ? `${folderName}_copia` : folderName);
+
+        const notesToCopy = notes.filter(
+          (n) => n.folder === srcPath || (n.folder && n.folder.startsWith(`${srcPath}/`))
+        );
+        for (const n of notesToCopy) {
+          const subRelative = n.folder === srcPath ? '' : n.folder.slice(srcPath.length);
+          const newNoteFolder = subRelative ? `${destFolder}${subRelative}` : destFolder;
+          await createNote({
+            title: n.title,
+            content: n.content,
+            tags: n.tags,
+            folder: newNoteFolder
+          });
+        }
+        await loadData();
+        onDataChanged();
+        setStatusMessage(t.itemPasted.replace('{target}', `/${destFolder}`));
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al pegar elemento';
+      setStatusMessage(`[FAIL] ${msg}`);
+    }
+  }, [clipboard, selectedFolder, notes, t.clipboardEmpty, t.itemPasted, t.noFolderRoot, onDataChanged, loadData]);
+
+  // Global & Contextual Keyboard Shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      const isInput = (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable
+      );
+
+      // Global shortcuts (Alt + key)
+      if (e.altKey && !e.ctrlKey && !e.metaKey) {
+        if (e.key.toLowerCase() === 'n') {
+          e.preventDefault();
+          setSelectedNote(null);
+          setTargetFolderForNewNote(selectedFolder || null);
+          setIsEditing(true);
+          return;
+        }
+        if (e.key.toLowerCase() === 'f' || e.key.toLowerCase() === 'c') {
+          e.preventDefault();
+          const name = prompt('Nombre de la nueva carpeta:');
+          if (name && name.trim()) {
+            const fullPath = selectedFolder ? `${selectedFolder}/${name.trim()}` : name.trim();
+            handleCreateFolder(fullPath);
+          }
+          return;
+        }
+        if (e.key.toLowerCase() === 'i') {
+          e.preventDefault();
+          emptyStateFileRef.current?.click();
+          return;
+        }
+        if (e.key.toLowerCase() === 'e') {
+          e.preventDefault();
+          handleExportFolder(null);
+          return;
+        }
+      }
+
+      // Contextual shortcuts when not actively editing text
+      if (!isInput) {
+        // Delete / Supr
+        if (e.key === 'Delete' || e.key === 'Del') {
+          if (selectedNote) {
+            e.preventDefault();
+            setDeleteConfirm({ id: selectedNote.id, title: selectedNote.title });
+          } else if (selectedFolder) {
+            e.preventDefault();
+            setDeleteFolderConfirm(selectedFolder);
+          }
+          return;
+        }
+
+        // Ctrl+C / Cmd+C
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c') {
+          if (selectedNote) {
+            e.preventDefault();
+            handleCopyNote(selectedNote);
+          } else if (selectedFolder) {
+            e.preventDefault();
+            handleCopyFolder(selectedFolder);
+          }
+          return;
+        }
+
+        // Ctrl+V / Cmd+V
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
+          if (clipboard) {
+            e.preventDefault();
+            handlePaste(selectedFolder || null);
+          }
+          return;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedNote, selectedFolder, clipboard, handleCopyNote, handleCopyFolder, handlePaste, handleCreateFolder, handleExportFolder]);
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-nexo-950">
-      {/* Optional Tag Filter Strip */}
+      {/* Optional Tag Filter Strip (Multi-select) */}
       {tags.length > 0 && (
         <div className="border-b border-nexo-850 bg-nexo-950 px-3 py-1.5 flex items-center gap-2 overflow-x-auto font-mono text-xs shrink-0">
           <span className="text-nexo-600 text-[10px] uppercase shrink-0">{t.tagsLabel}</span>
           <button
             type="button"
-            onClick={() => setSelectedTag(null)}
+            onClick={() => setSelectedTags([])}
             className={`px-2 py-0.5 text-[11px] border transition-colors ${
-              selectedTag === null
+              selectedTags.length === 0
                 ? 'border-white bg-white text-black font-bold'
                 : 'border-nexo-800 text-nexo-400 hover:text-white'
             }`}
           >
             {t.allTags}
           </button>
-          {tags.map((tag) => (
-            <button
-              key={tag}
-              type="button"
-              onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
-              className={`px-2 py-0.5 text-[11px] border transition-colors ${
-                selectedTag === tag
-                  ? 'border-white bg-white text-black font-bold'
-                  : 'border-nexo-800 text-nexo-400 hover:text-white'
-              }`}
-            >
-              #{tag}
-            </button>
-          ))}
+          {tags.map((tag) => {
+            const isSelected = selectedTags.includes(tag);
+            return (
+              <button
+                key={tag}
+                type="button"
+                onClick={() =>
+                  setSelectedTags((prev) =>
+                    prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+                  )
+                }
+                className={`px-2 py-0.5 text-[11px] border transition-colors ${
+                  isSelected
+                    ? 'border-emerald-400 bg-emerald-950/80 text-emerald-300 font-bold'
+                    : 'border-nexo-800 text-nexo-400 hover:text-white'
+                }`}
+              >
+                #{tag}
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -368,9 +535,11 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
         {/* Left Panel: IDE Explorer (VS Code style file tree) */}
         <div className="w-72 md:w-80 shrink-0 h-full overflow-hidden flex flex-col bg-nexo-950">
           <FolderTree
-            notes={notes}
+            notes={displayedNotes}
             folders={folders}
             selectedNoteId={selectedNote?.id || null}
+            selectedFolder={selectedFolder}
+            onSelectFolder={(folder) => setSelectedFolder(folder)}
             onSelectNote={(note) => {
               setSelectedNote(note);
               setIsEditing(false);
@@ -387,6 +556,10 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
             onImportFile={handleImportFile}
             onExportFolder={handleExportFolder}
             onExportNote={handleExportNote}
+            onCopyNote={handleCopyNote}
+            onCopyFolder={handleCopyFolder}
+            onPaste={handlePaste}
+            hasClipboardItem={!!clipboard}
             onDropNoteOnFolder={handleDropNoteOnFolder}
             onMoveFolder={handleMoveFolder}
           />

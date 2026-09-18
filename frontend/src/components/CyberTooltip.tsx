@@ -5,11 +5,17 @@ interface CyberTooltipProps {
   text: string;
   children: React.ReactNode;
   className?: string;
+  position?: 'top' | 'bottom';
 }
 
 const GLYPHS = "!<>-_\\/[]{}—=+*^?#_$%&01";
 
-export const CyberTooltip: React.FC<CyberTooltipProps> = ({ text, children, className = '' }) => {
+export const CyberTooltip: React.FC<CyberTooltipProps> = ({
+  text,
+  children,
+  className = '',
+  position = 'bottom'
+}) => {
   const [isHovered, setIsHovered] = useState(false);
   const [displayText, setDisplayText] = useState(text);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -52,6 +58,8 @@ export const CyberTooltip: React.FC<CyberTooltipProps> = ({ text, children, clas
     };
   }, [isHovered, text]);
 
+  const isBottom = position === 'bottom';
+
   return (
     <div
       className={`relative inline-flex items-center ${className}`}
@@ -59,11 +67,19 @@ export const CyberTooltip: React.FC<CyberTooltipProps> = ({ text, children, clas
       onMouseLeave={() => setIsHovered(false)}
     >
       {isHovered && (
-        <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 z-50 pointer-events-none whitespace-nowrap bg-black/95 border border-emerald-500/80 text-emerald-300 font-mono text-[10px] px-2 py-0.5 shadow-xl shadow-emerald-950/60 flex items-center gap-1">
+        <div
+          className={`absolute ${
+            isBottom ? 'top-full mt-2' : 'bottom-full mb-2'
+          } left-1/2 -translate-x-1/2 z-50 pointer-events-none whitespace-nowrap bg-black/95 border border-emerald-500/80 text-emerald-300 font-mono text-[10px] px-2 py-0.5 shadow-xl shadow-emerald-950/60 flex items-center gap-1`}
+        >
           <span className="text-emerald-400 font-bold">&gt;</span>
           <span>{displayText}</span>
           {/* Arrow */}
-          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-emerald-500/80 w-0 h-0" />
+          <div
+            className={`absolute ${
+              isBottom ? 'bottom-full border-b-emerald-500/80' : 'top-full border-t-emerald-500/80'
+            } left-1/2 -translate-x-1/2 border-4 border-transparent w-0 h-0`}
+          />
         </div>
       )}
       {children}

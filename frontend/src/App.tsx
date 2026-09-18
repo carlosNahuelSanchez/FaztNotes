@@ -80,8 +80,8 @@ export function App() {
             NEXUS STUDIO
           </a>
         </div>
-        <div className="hidden sm:flex items-center gap-3 text-nexo-600">
-          <span>SHORTCUTS: [F1] NOTAS │ [F2] NEXO</span>
+        <div className="hidden lg:flex items-center gap-2 text-nexo-600 text-[10px]">
+          <span>SHORTCUTS: [F1] NOTAS │ [F2] NEXO │ [ALT+N] +NOTA │ [ALT+F] +CARPETA │ [ALT+I] IMPORTAR │ [ALT+E] EXPORTAR │ [SUPR] BORRAR │ [CTRL+C/V] COPIAR/PEGAR</span>
         </div>
       </footer>
     </div>

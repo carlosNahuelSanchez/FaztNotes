@@ -9,7 +9,9 @@ import {
   UploadIcon,
   DownloadIcon,
   DotsVerticalIcon,
-  TrashIcon
+  TrashIcon,
+  CopyIcon,
+  ClipboardIcon
 } from './CyberIcons';
 import { CyberTooltip } from './CyberTooltip';
 
@@ -17,6 +19,8 @@ interface FolderTreeProps {
   notes: Note[];
   folders: string[];
   selectedNoteId: string | null;
+  selectedFolder?: string | null;
+  onSelectFolder?: (folder: string | null) => void;
   onSelectNote: (note: Note) => void;
   onDeleteNote: (id: string, title: string) => void;
   onDeleteFolder?: (folderPath: string) => void;
@@ -25,6 +29,10 @@ interface FolderTreeProps {
   onImportFile: (file: File, folderTarget?: string | null) => void;
   onExportFolder?: (folder: string | null) => void;
   onExportNote?: (note: Note) => void;
+  onCopyNote?: (note: Note) => void;
+  onCopyFolder?: (folderPath: string) => void;
+  onPaste?: (targetFolder: string | null) => void;
+  hasClipboardItem?: boolean;
   onDropNoteOnFolder: (noteId: string, folderName: string | null) => void;
   onMoveFolder: (sourceFolder: string, targetFolder: string | null) => void;
 }
@@ -40,6 +48,8 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
   notes,
   folders,
   selectedNoteId,
+  selectedFolder,
+  onSelectFolder,
   onSelectNote,
   onDeleteNote,
   onDeleteFolder,
@@ -48,6 +58,10 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
   onImportFile,
   onExportFolder,
   onExportNote,
+  onCopyNote,
+  onCopyFolder,
+  onPaste,
+  hasClipboardItem = false,
   onDropNoteOnFolder,
   onMoveFolder
 }) => {
@@ -55,6 +69,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importTargetFolder, setImportTargetFolder] = useState<string | null>(null);
   const [activeMenuFolder, setActiveMenuFolder] = useState<string | null>(null);
+  const [activeMenuNote, setActiveMenuNote] = useState<string | null>(null);
   const [isCreatingRootFolder, setIsCreatingRootFolder] = useState(false);
   const [creatingSubFor, setCreatingSubFor] = useState<string | null>(null);
   const [newFolderName, setNewFolderName] = useState('');
@@ -63,9 +78,15 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    const handleOutsideClick = () => setActiveMenuFolder(null);
+    const handleOutsideClick = () => {
+      setActiveMenuFolder(null);
+      setActiveMenuNote(null);
+    };
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setActiveMenuFolder(null);
+      if (e.key === 'Escape') {
+        setActiveMenuFolder(null);
+        setActiveMenuNote(null);
+      }
     };
     window.addEventListener('click', handleOutsideClick);
     window.addEventListener('keydown', handleKeyDown);
@@ -208,15 +229,31 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
     }
   };
 
-  // Filter helper for search
-  const matchesSearch = (title: string) => {
+  // Filter helper for search: searches title, content and tags
+  const matchesSearch = (note: Note) => {
     if (!searchTerm.trim()) return true;
-    return title.toLowerCase().includes(searchTerm.trim().toLowerCase());
+    const q = searchTerm.trim().toLowerCase();
+    const titleMatch = note.title.toLowerCase().includes(q);
+    const contentMatch = (note.content || '').toLowerCase().includes(q);
+    const tagMatch = (note.tags || []).some((t) => t.toLowerCase().includes(q));
+    return titleMatch || contentMatch || tagMatch;
+  };
+
+  // Helper to check if a folder node has any matching note or subfolder
+  const folderHasMatch = (node: TreeNode, query: string): boolean => {
+    if (!query) return false;
+    const q = query.toLowerCase();
+    if (node.name.toLowerCase().includes(q)) return true;
+    if (node.notes.some((note) => matchesSearch(note))) return true;
+    for (const sub of node.subfolders.values()) {
+      if (folderHasMatch(sub, query)) return true;
+    }
+    return false;
   };
 
   // Render a note item in the IDE tree
   const renderNoteItem = (note: Note, depth: number) => {
-    if (!matchesSearch(note.title)) return null;
+    if (!matchesSearch(note)) return null;
     const isSelected = selectedNoteId === note.id;
 
     return (
@@ -229,7 +266,10 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
           e.dataTransfer.setData('application/nexo-item', JSON.stringify({ type: 'note', id: note.id }));
           e.dataTransfer.effectAllowed = 'move';
         }}
-        onClick={() => onSelectNote(note)}
+        onClick={() => {
+          onSelectNote(note);
+          if (onSelectFolder) onSelectFolder(note.folder || null);
+        }}
         style={{ paddingLeft: `${depth * 14 + 10}px` }}
         className={`group py-1 pr-2 cursor-pointer flex items-center justify-between text-xs transition-colors select-none ${
           isSelected
@@ -241,31 +281,86 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
           <FileCodeIcon className="w-3.5 h-3.5 text-emerald-500/80 group-hover:text-emerald-400 shrink-0 transition-colors" />
           <span className="truncate">{note.title}.md</span>
         </div>
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          {onExportNote && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onExportNote(note);
-              }}
-              className="text-[10px] text-cyan-400 hover:text-white px-1 hover:bg-cyan-950/50 transition-colors"
-              title="Exportar nota (.md)"
-            >
-              EXP
-            </button>
-          )}
+
+        {/* 3-dots Menu for note */}
+        <div className="relative flex items-center">
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              onDeleteNote(note.id, note.title);
+              setActiveMenuNote(activeMenuNote === note.id ? null : note.id);
+              setActiveMenuFolder(null);
             }}
-            className="text-[10px] text-nexo-alert hover:text-red-400 px-1 hover:bg-red-950/50 transition-colors"
-            title="Eliminar nota"
+            className="text-nexo-400 hover:text-white px-1 py-0.5 border border-transparent hover:border-nexo-700 hover:bg-nexo-850 opacity-0 group-hover:opacity-100 transition-all"
+            title="Opciones de archivo"
           >
-            DEL
+            <DotsVerticalIcon className="w-3.5 h-3.5" />
           </button>
+
+          {activeMenuNote === note.id && (
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="absolute right-0 top-full mt-1 z-50 w-36 bg-nexo-950 border border-nexo-700 shadow-2xl py-1 font-mono text-xs flex flex-col"
+            >
+              {/* 1. Abrir / Ver */}
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveMenuNote(null);
+                  onSelectNote(note);
+                }}
+                className="px-2.5 py-1 text-left text-nexo-200 hover:text-white hover:bg-nexo-850 flex items-center gap-2"
+              >
+                <FileCodeIcon className="w-3 h-3 text-emerald-400 shrink-0" />
+                <span>{t.noteOptOpen}</span>
+              </button>
+
+              {/* 2. Copiar */}
+              {onCopyNote && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveMenuNote(null);
+                    onCopyNote(note);
+                  }}
+                  className="px-2.5 py-1 text-left text-nexo-200 hover:text-white hover:bg-nexo-850 flex items-center gap-2"
+                >
+                  <CopyIcon className="w-3 h-3 text-cyan-400 shrink-0" />
+                  <span>{t.noteOptCopy}</span>
+                </button>
+              )}
+
+              {/* 3. Exportar */}
+              {onExportNote && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveMenuNote(null);
+                    onExportNote(note);
+                  }}
+                  className="px-2.5 py-1 text-left text-cyan-400 hover:text-cyan-300 hover:bg-nexo-850 flex items-center gap-2"
+                >
+                  <DownloadIcon className="w-3 h-3 shrink-0" />
+                  <span>{t.noteOptExport}</span>
+                </button>
+              )}
+
+              <div className="border-t border-nexo-800 my-0.5" />
+
+              {/* 4. Eliminar */}
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveMenuNote(null);
+                  onDeleteNote(note.id, note.title);
+                }}
+                className="px-2.5 py-1 text-left text-red-400 hover:text-red-300 hover:bg-red-950/50 flex items-center gap-2"
+              >
+                <TrashIcon className="w-3 h-3 shrink-0" />
+                <span>{t.noteOptDelete}</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -273,11 +368,18 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
 
   // Recursive renderer for folders and their direct immediate notes
   const renderFolderNode = (node: TreeNode, depth: number = 0) => {
-    const isCollapsed = !!collapsed[node.fullPath];
+    const isSearching = !!searchTerm.trim();
+    const hasMatch = isSearching ? folderHasMatch(node, searchTerm.trim()) : false;
+    const isCollapsed = isSearching ? !hasMatch : !!collapsed[node.fullPath];
+    const isFolderSelected = selectedFolder === node.fullPath;
     const isDragOver = dragOverFolder === node.fullPath;
     const isAddingSub = creatingSubFor === node.fullPath;
     const directNotes = node.notes;
     const childFolders = Array.from(node.subfolders.values());
+
+    if (isSearching && !hasMatch) {
+      return null;
+    }
 
     return (
       <div key={node.fullPath} className="flex flex-col">
@@ -292,10 +394,15 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
           onDragOver={(e) => handleDragOver(e, node.fullPath)}
           onDragLeave={handleDragLeave}
           onDrop={(e) => handleDrop(e, node.fullPath)}
-          onClick={(e) => toggleFolder(node.fullPath, e)}
+          onClick={(e) => {
+            toggleFolder(node.fullPath, e);
+            if (onSelectFolder) onSelectFolder(node.fullPath);
+          }}
           style={{ paddingLeft: `${depth * 14 + 6}px` }}
           className={`group py-1 pr-2 cursor-pointer flex items-center justify-between text-xs transition-colors select-none ${
-            isDragOver
+            isFolderSelected
+              ? 'bg-nexo-850 text-white border-l-2 border-emerald-400 font-semibold'
+              : isDragOver
               ? 'bg-emerald-950/40 border-l-2 border-emerald-400 text-emerald-300 font-bold'
               : 'border-l-2 border-transparent text-nexo-400 hover:bg-nexo-900/60 hover:text-white'
           }`}
@@ -317,6 +424,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
               onClick={(e) => {
                 e.stopPropagation();
                 setActiveMenuFolder(activeMenuFolder === node.fullPath ? null : node.fullPath);
+                setActiveMenuNote(null);
               }}
               className="text-nexo-400 hover:text-white px-1 py-0.5 border border-transparent hover:border-nexo-700 hover:bg-nexo-850 transition-colors"
               title="Opciones de carpeta"
@@ -327,7 +435,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
             {activeMenuFolder === node.fullPath && (
               <div
                 onClick={(e) => e.stopPropagation()}
-                className="absolute right-0 top-full mt-1 z-50 w-36 bg-nexo-950 border border-nexo-700 shadow-2xl py-1 font-mono text-xs flex flex-col"
+                className="absolute right-0 top-full mt-1 z-50 w-40 bg-nexo-950 border border-nexo-700 shadow-2xl py-1 font-mono text-xs flex flex-col"
               >
                 {/* 1. Crear nota */}
                 <button
@@ -385,9 +493,39 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
                   </button>
                 )}
 
+                {/* 5. Copiar carpeta */}
+                {onCopyFolder && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveMenuFolder(null);
+                      onCopyFolder(node.fullPath);
+                    }}
+                    className="px-2.5 py-1 text-left text-nexo-200 hover:text-white hover:bg-nexo-850 flex items-center gap-2"
+                  >
+                    <CopyIcon className="w-3 h-3 text-cyan-400 shrink-0" />
+                    <span>{t.folderOptCopy}</span>
+                  </button>
+                )}
+
+                {/* 6. Pegar en esta carpeta */}
+                {onPaste && hasClipboardItem && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveMenuFolder(null);
+                      onPaste(node.fullPath);
+                    }}
+                    className="px-2.5 py-1 text-left text-emerald-400 hover:text-emerald-300 hover:bg-nexo-850 flex items-center gap-2"
+                  >
+                    <ClipboardIcon className="w-3 h-3 shrink-0" />
+                    <span>{t.folderOptPaste}</span>
+                  </button>
+                )}
+
                 <div className="border-t border-nexo-800 my-0.5" />
 
-                {/* 5. Eliminar carpeta */}
+                {/* 7. Eliminar carpeta */}
                 {onDeleteFolder && (
                   <button
                     type="button"
@@ -454,16 +592,16 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
   return (
     <div className="w-full h-full bg-nexo-950 border-r border-nexo-800 flex flex-col font-mono text-xs select-none">
       {/* Explorer Top Toolbar */}
-      <div className="bg-nexo-900 px-3 py-2 border-b border-nexo-850 flex items-center justify-between shrink-0">
-        <span className="font-bold text-nexo-300 text-[11px] uppercase tracking-wider flex items-center gap-1.5">
-          <span>{t.explorerTitle}</span>
+      <div className="bg-nexo-900 px-2.5 py-1.5 border-b border-nexo-850 flex items-center justify-between gap-2 shrink-0">
+        <span className="font-bold text-nexo-300 text-[11px] uppercase tracking-wider shrink-0">
+          {t.explorerTitle}
         </span>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5 flex-1 justify-end">
           <button
             type="button"
-            onClick={() => onCreateNote(null)}
-            className="text-nexo-accent hover:text-emerald-300 text-[10px] px-1.5 py-0.5 border border-nexo-accent/40 bg-nexo-accent/10 font-bold"
-            title="Crear nueva nota en la raíz"
+            onClick={() => onCreateNote(selectedFolder || null)}
+            className="flex-1 text-center bg-nexo-accent hover:bg-emerald-400 text-black font-bold text-[10px] py-1 transition-colors uppercase tracking-wider truncate"
+            title="Crear nueva nota"
           >
             {t.createNoteBtn}
           </button>
@@ -474,27 +612,27 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
               setCreatingSubFor(null);
               setNewFolderName('');
             }}
-            className="text-nexo-300 hover:text-white text-[10px] px-1.5 py-0.5 border border-nexo-700 bg-nexo-850 font-bold"
+            className="flex-1 text-center border border-nexo-700 bg-nexo-850 hover:bg-nexo-800 text-nexo-200 hover:text-white text-[10px] py-1 transition-colors uppercase tracking-wider truncate"
             title="Crear nueva carpeta raíz"
           >
             {t.createFolderBtn}
           </button>
-          <CyberTooltip text={t.importHint}>
+          <CyberTooltip text={t.importHint} position="bottom">
             <button
               type="button"
-              onClick={() => triggerImport(null)}
-              className="text-emerald-400 hover:text-white p-1 border border-emerald-500/40 bg-emerald-950/20 hover:bg-emerald-900/60 font-bold flex items-center justify-center transition-colors"
+              onClick={() => triggerImport(selectedFolder || null)}
+              className="text-emerald-400 hover:text-white p-1 border border-emerald-500/40 bg-emerald-950/20 hover:bg-emerald-900/60 font-bold flex items-center justify-center transition-colors shrink-0"
               aria-label={t.importBtn}
             >
               <UploadIcon className="w-3.5 h-3.5" />
             </button>
           </CyberTooltip>
           {onExportFolder && (
-            <CyberTooltip text={t.exportAll}>
+            <CyberTooltip text={t.exportAll} position="bottom">
               <button
                 type="button"
                 onClick={() => onExportFolder(null)}
-                className="text-cyan-400 hover:text-white p-1 border border-cyan-500/40 bg-cyan-950/20 hover:bg-cyan-900/60 font-bold flex items-center justify-center transition-colors"
+                className="text-cyan-400 hover:text-white p-1 border border-cyan-500/40 bg-cyan-950/20 hover:bg-cyan-900/60 font-bold flex items-center justify-center transition-colors shrink-0"
                 aria-label={t.exportAll}
               >
                 <DownloadIcon className="w-3.5 h-3.5" />
