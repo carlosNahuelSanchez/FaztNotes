@@ -244,6 +244,7 @@ The `nexonotes` CLI simplifies container management across Linux, macOS, and Win
 | `GET` | `/api/notes/export/folder` | Export folders or full workspace as a compressed archive (`.zip`) |
 | `PUT` | `/api/notes/{id}` | Update note content and regenerate vector embedding |
 | `DELETE` | `/api/notes/{id}` | Transactionally remove note content and its vector record |
+| `DELETE` | `/api/notes/folder` | Delete an entire folder along with all child subfolders and notes |
 | `GET` | `/api/notes/folders` | Retrieve list of active folder paths |
 | `GET` | `/api/notes/tags` | Retrieve list of distinct tags across all notes |
 | `GET` | `/api/nexo/stream` | Stream RAG assistant responses in real-time via SSE |

@@ -447,6 +447,29 @@ def update_note(note_id: str, payload: NoteUpdate, db: Session = Depends(get_db)
     return to_note_response(note, embedding_error=emb_err)
 
 
+@router.delete("/folder", status_code=status.HTTP_200_OK)
+def delete_folder(
+    folder: str = Query(..., description="Ruta de la carpeta a eliminar junto a todo su contenido"),
+    db: Session = Depends(get_db)
+):
+    clean_folder = folder.strip()
+    if not clean_folder:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Se requiere especificar la ruta de la carpeta a eliminar."
+        )
+
+    stmt = select(Note).where(or_(Note.folder == clean_folder, Note.folder.like(f"{clean_folder}/%")))
+    notes = db.execute(stmt).scalars().all()
+
+    count = len(notes)
+    for note in notes:
+        db.delete(note)
+    db.commit()
+
+    return {"status": "ok", "deleted_folder": clean_folder, "notes_deleted": count}
+
+
 @router.delete("/{note_id}", status_code=status.HTTP_200_OK)
 def delete_note(note_id: str, db: Session = Depends(get_db)):
     note = db.get(Note, note_id)
