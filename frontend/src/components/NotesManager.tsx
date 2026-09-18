@@ -9,6 +9,7 @@ import {
   updateNote,
   deleteNote,
   deleteFolder,
+  renameFolderInBackend,
   importNoteFile,
   getExportNoteUrl,
   getExportFolderUrl,
@@ -379,6 +380,66 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
     }
   };
 
+  const handleRenameNote = async (note: Note, newTitle: string) => {
+    const cleanTitle = newTitle.trim();
+    if (!cleanTitle || cleanTitle === note.title) return;
+    try {
+      setStatusMessage(`Renombrando nota '${note.title}'...`, 'loading');
+      const updated = await updateNote(note.id, { title: cleanTitle });
+      if (selectedNote && selectedNote.id === note.id) {
+        setSelectedNote(updated);
+      }
+      setStatusMessage(`[OK] Nota renombrada a '${updated.title}'.`, 'success');
+      await loadData();
+      onDataChanged();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al renombrar nota';
+      setSystemError(msg);
+      setStatusMessage(`[FAIL] ${msg}`, 'error');
+    }
+  };
+
+  const handleRenameFolder = async (oldFolder: string, newFolder: string) => {
+    const cleanOld = oldFolder.trim();
+    const cleanNew = newFolder.trim();
+    if (!cleanNew || cleanOld === cleanNew) return;
+
+    try {
+      setStatusMessage(`Renombrando carpeta '/${cleanOld}' a '/${cleanNew}'...`, 'loading');
+      await renameFolderInBackend(cleanOld, cleanNew);
+
+      setCustomFolders((prev) => {
+        const updated = prev.map((f) => {
+          if (f === cleanOld) return cleanNew;
+          if (f.startsWith(`${cleanOld}/`)) {
+            const sub = f.substring(cleanOld.length + 1);
+            return `${cleanNew}/${sub}`;
+          }
+          return f;
+        });
+        if (!updated.includes(cleanNew)) updated.push(cleanNew);
+        return Array.from(new Set(updated)).sort();
+      });
+
+      if (selectedFolder) {
+        if (selectedFolder === cleanOld) {
+          setSelectedFolder(cleanNew);
+        } else if (selectedFolder.startsWith(`${cleanOld}/`)) {
+          const sub = selectedFolder.substring(cleanOld.length + 1);
+          setSelectedFolder(`${cleanNew}/${sub}`);
+        }
+      }
+
+      setStatusMessage(`[OK] Carpeta '/${cleanOld}' renombrada a '/${cleanNew}'.`, 'success');
+      await loadData();
+      onDataChanged();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al renombrar carpeta';
+      setSystemError(msg);
+      setStatusMessage(`[FAIL] ${msg}`, 'error');
+    }
+  };
+
   const handleCreateFolder = (newFolder: string) => {
     const cleanFolder = newFolder.trim();
     if (!cleanFolder) return;
@@ -717,6 +778,8 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
             hasClipboardItem={!!clipboard}
             onDropNoteOnFolder={handleDropNoteOnFolder}
             onMoveFolder={handleMoveFolder}
+            onRenameNote={handleRenameNote}
+            onRenameFolder={handleRenameFolder}
           />
         </div>
 

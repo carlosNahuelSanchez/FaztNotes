@@ -11,7 +11,8 @@ import {
   DotsVerticalIcon,
   TrashIcon,
   CopyIcon,
-  ClipboardIcon
+  ClipboardIcon,
+  EditIcon
 } from './CyberIcons';
 import { CyberTooltip } from './CyberTooltip';
 
@@ -35,6 +36,8 @@ interface FolderTreeProps {
   hasClipboardItem?: boolean;
   onDropNoteOnFolder: (noteId: string, folderName: string | null) => void;
   onMoveFolder: (sourceFolder: string, targetFolder: string | null) => void;
+  onRenameNote?: (note: Note, newTitle: string) => void;
+  onRenameFolder?: (oldFolder: string, newFolder: string) => void;
 }
 
 interface TreeNode {
@@ -63,7 +66,9 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
   onPaste,
   hasClipboardItem = false,
   onDropNoteOnFolder,
-  onMoveFolder
+  onMoveFolder,
+  onRenameNote,
+  onRenameFolder
 }) => {
   const { t } = useI18n();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -73,9 +78,28 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
   const [isCreatingRootFolder, setIsCreatingRootFolder] = useState(false);
   const [creatingSubFor, setCreatingSubFor] = useState<string | null>(null);
   const [newFolderName, setNewFolderName] = useState('');
+  const [renamingNoteId, setRenamingNoteId] = useState<string | null>(null);
+  const [renameNoteTitle, setRenameNoteTitle] = useState<string>('');
+  const [renamingFolderPath, setRenamingFolderPath] = useState<string | null>(null);
+  const [renameFolderName, setRenameFolderName] = useState<string>('');
   const [dragOverFolder, setDragOverFolder] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [searchTerm, setSearchTerm] = useState('');
+
+  const startRenameNote = (note: Note) => {
+    setActiveMenuNote(null);
+    setRenamingFolderPath(null);
+    setRenamingNoteId(note.id);
+    setRenameNoteTitle(note.title);
+  };
+
+  const startRenameFolder = (folderPath: string) => {
+    setActiveMenuFolder(null);
+    setRenamingNoteId(null);
+    const folderName = folderPath.split('/').pop() || folderPath;
+    setRenamingFolderPath(folderPath);
+    setRenameFolderName(folderName);
+  };
 
   useEffect(() => {
     const handleOutsideClick = () => {
@@ -88,6 +112,28 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
         setActiveMenuNote(null);
         setIsCreatingRootFolder(false);
         setCreatingSubFor(null);
+        setRenamingNoteId(null);
+        setRenamingFolderPath(null);
+      }
+      if (e.key === 'F2') {
+        const target = e.target as HTMLElement;
+        const isInput = (
+          target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable
+        );
+        if (!isInput) {
+          if (selectedNoteId) {
+            const found = notes.find((n) => n.id === selectedNoteId);
+            if (found) {
+              e.preventDefault();
+              startRenameNote(found);
+            }
+          } else if (selectedFolder) {
+            e.preventDefault();
+            startRenameFolder(selectedFolder);
+          }
+        }
       }
       if (e.altKey && !e.ctrlKey && !e.metaKey && (e.key.toLowerCase() === 'f' || e.key.toLowerCase() === 'c')) {
         const target = e.target as HTMLElement;
@@ -289,6 +335,45 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
     if (!matchesSearch(note)) return null;
     const isSelected = selectedNoteId === note.id;
 
+    if (renamingNoteId === note.id) {
+      return (
+        <form
+          key={note.id}
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (renameNoteTitle.trim() && onRenameNote) {
+              onRenameNote(note, renameNoteTitle.trim());
+            }
+            setRenamingNoteId(null);
+          }}
+          style={{ paddingLeft: `${depth * 14 + 10}px` }}
+          className="py-1 pr-2 flex items-center gap-1.5 text-xs bg-nexo-900/90 border-l-2 border-nexo-accent font-mono my-0.5"
+        >
+          <FileCodeIcon className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+          <input
+            type="text"
+            autoFocus
+            value={renameNoteTitle}
+            onChange={(e) => setRenameNoteTitle(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') setRenamingNoteId(null);
+            }}
+            className="flex-1 bg-nexo-950 border border-nexo-700 px-1.5 py-0.5 text-xs text-white focus:outline-none focus:border-nexo-accent font-mono"
+          />
+          <button type="submit" className="text-[10px] bg-nexo-accent text-black font-bold px-1.5 py-0.5">
+            OK
+          </button>
+          <button
+            type="button"
+            onClick={() => setRenamingNoteId(null)}
+            className="text-[10px] text-nexo-400 hover:text-white px-1 py-0.5"
+          >
+            X
+          </button>
+        </form>
+      );
+    }
+
     return (
       <div
         key={note.id}
@@ -348,7 +433,19 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
                 <span>{t.noteOptOpen}</span>
               </button>
 
-              {/* 2. Copiar */}
+              {/* 2. Renombrar */}
+              {onRenameNote && (
+                <button
+                  type="button"
+                  onClick={() => startRenameNote(note)}
+                  className="px-2.5 py-1 text-left text-nexo-200 hover:text-white hover:bg-nexo-850 flex items-center gap-2"
+                >
+                  <EditIcon className="w-3 h-3 text-amber-400 shrink-0" />
+                  <span>{t.noteOptRename}</span>
+                </button>
+              )}
+
+              {/* 3. Copiar */}
               {onCopyNote && (
                 <button
                   type="button"
@@ -363,7 +460,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
                 </button>
               )}
 
-              {/* 3. Exportar */}
+              {/* 4. Exportar */}
               {onExportNote && (
                 <button
                   type="button"
@@ -380,7 +477,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
 
               <div className="border-t border-nexo-800 my-0.5" />
 
-              {/* 4. Eliminar */}
+              {/* 5. Eliminar */}
               <button
                 type="button"
                 onClick={() => {
@@ -412,6 +509,50 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
 
     if (isSearching && !hasMatch) {
       return null;
+    }
+
+    if (renamingFolderPath === node.fullPath) {
+      return (
+        <form
+          key={node.fullPath}
+          onSubmit={(e) => {
+            e.preventDefault();
+            const cleanName = renameFolderName.trim();
+            if (cleanName && cleanName !== node.name && onRenameFolder) {
+              const parts = node.fullPath.split('/');
+              parts.pop();
+              const parentPath = parts.join('/');
+              const newFullPath = parentPath ? `${parentPath}/${cleanName}` : cleanName;
+              onRenameFolder(node.fullPath, newFullPath);
+            }
+            setRenamingFolderPath(null);
+          }}
+          style={{ paddingLeft: `${depth * 14 + 6}px` }}
+          className="py-1 pr-2 flex items-center gap-1.5 text-xs bg-nexo-900/90 border-l-2 border-amber-400 font-mono my-0.5"
+        >
+          <FolderIcon className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+          <input
+            type="text"
+            autoFocus
+            value={renameFolderName}
+            onChange={(e) => setRenameFolderName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') setRenamingFolderPath(null);
+            }}
+            className="flex-1 bg-nexo-950 border border-nexo-700 px-1.5 py-0.5 text-xs text-white focus:outline-none focus:border-amber-400 font-mono"
+          />
+          <button type="submit" className="text-[10px] bg-amber-400 text-black font-bold px-1.5 py-0.5">
+            OK
+          </button>
+          <button
+            type="button"
+            onClick={() => setRenamingFolderPath(null)}
+            className="text-[10px] text-nexo-400 hover:text-white px-1 py-0.5"
+          >
+            X
+          </button>
+        </form>
+      );
     }
 
     return (
@@ -498,7 +639,19 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
                   <span>{t.folderOptCreateFolder}</span>
                 </button>
 
-                {/* 3. Importar */}
+                {/* 3. Renombrar carpeta */}
+                {onRenameFolder && (
+                  <button
+                    type="button"
+                    onClick={() => startRenameFolder(node.fullPath)}
+                    className="px-2.5 py-1 text-left text-nexo-200 hover:text-white hover:bg-nexo-850 flex items-center gap-2"
+                  >
+                    <EditIcon className="w-3 h-3 text-amber-400 shrink-0" />
+                    <span>{t.folderOptRename}</span>
+                  </button>
+                )}
+
+                {/* 4. Importar */}
                 <button
                   type="button"
                   onClick={() => {

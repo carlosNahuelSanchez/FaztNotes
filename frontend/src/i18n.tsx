@@ -64,6 +64,7 @@ const translations = {
     // Folder context menu options
     folderOptCreateNote: 'Create note',
     folderOptCreateFolder: 'Create folder',
+    folderOptRename: 'Rename folder',
     folderOptImport: 'Import',
     folderOptExport: 'Export',
     folderOptCopy: 'Copy folder',
@@ -72,6 +73,7 @@ const translations = {
 
     // Note context menu options
     noteOptOpen: 'Open / View',
+    noteOptRename: 'Rename note',
     noteOptCopy: 'Copy note',
     noteOptExport: 'Export (.md)',
     noteOptDelete: 'Delete note',
@@ -210,9 +212,10 @@ const translations = {
     allTags: 'TODAS',
     noTags: 'sin etiquetas',
 
-    // Folder context menu options (en orden exacto: crear nota, crear carpeta, importar, exportar, eliminar)
+    // Folder context menu options (en orden exacto: crear nota, crear carpeta, renombrar, importar, exportar, eliminar)
     folderOptCreateNote: 'Crear nota',
     folderOptCreateFolder: 'Crear carpeta',
+    folderOptRename: 'Renombrar carpeta',
     folderOptImport: 'Importar',
     folderOptExport: 'Exportar',
     folderOptCopy: 'Copiar carpeta',
@@ -221,6 +224,7 @@ const translations = {
 
     // Note context menu options
     noteOptOpen: 'Abrir / Ver',
+    noteOptRename: 'Renombrar nota',
     noteOptCopy: 'Copiar nota',
     noteOptExport: 'Exportar (.md)',
     noteOptDelete: 'Eliminar nota',

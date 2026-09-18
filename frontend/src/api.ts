@@ -135,6 +135,19 @@ export async function deleteFolder(folderPath: string): Promise<{ status: string
   return res.json();
 }
 
+export async function renameFolderInBackend(oldFolder: string, newFolder: string): Promise<{ status: string; renamed_notes: number }> {
+  const res = await fetch(`${API_BASE}/notes/folder/rename`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ old_folder: oldFolder, new_folder: newFolder })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Fallo al renombrar la carpeta' }));
+    throw new Error(err.detail || 'Fallo al renombrar la carpeta.');
+  }
+  return res.json();
+}
+
 export async function fetchTags(): Promise<string[]> {
   const res = await fetch(`${API_BASE}/notes/tags`);
   if (!res.ok) {
