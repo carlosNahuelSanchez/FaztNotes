@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select, or_, func
 from app.database import get_db
 from app.models import Note
-from app.schemas import NoteCreate, NoteUpdate, NoteResponse, NoteImportResult
+from app.schemas import NoteCreate, NoteUpdate, NoteResponse, NoteImportResult, FolderRenamePayload
 from app.services.rag import sync_note_embedding
 
 logger = logging.getLogger("nexonotes.notes")
@@ -445,6 +445,37 @@ def update_note(note_id: str, payload: NoteUpdate, db: Session = Depends(get_db)
             db.refresh(note)
 
     return to_note_response(note, embedding_error=emb_err)
+
+
+@router.put("/folder/rename", status_code=status.HTTP_200_OK)
+def rename_folder(payload: FolderRenamePayload, db: Session = Depends(get_db)):
+    clean_old = payload.old_folder.strip()
+    clean_new = payload.new_folder.strip()
+    if not clean_old or not clean_new:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Se deben proporcionar tanto el nombre antiguo como el nuevo nombre de la carpeta."
+        )
+
+    if clean_old == clean_new:
+        return {"status": "ok", "old_folder": clean_old, "new_folder": clean_new, "renamed_notes": 0}
+
+    stmt = select(Note).where(or_(Note.folder == clean_old, Note.folder.like(f"{clean_old}/%")))
+    notes = db.execute(stmt).scalars().all()
+
+    renamed_count = 0
+    for note in notes:
+        if note.folder == clean_old:
+            note.folder = clean_new
+            renamed_count += 1
+        elif note.folder and note.folder.startswith(f"{clean_old}/"):
+            sub_path = note.folder[len(clean_old) + 1:]
+            note.folder = f"{clean_new}/{sub_path}"
+            renamed_count += 1
+        db.add(note)
+
+    db.commit()
+    return {"status": "ok", "old_folder": clean_old, "new_folder": clean_new, "renamed_notes": renamed_count}
 
 
 @router.delete("/folder", status_code=status.HTTP_200_OK)

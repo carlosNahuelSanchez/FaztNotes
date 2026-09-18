@@ -21,6 +21,11 @@ class NoteUpdate(BaseModel):
     folder: Optional[str] = Field(None, max_length=60)
 
 
+class FolderRenamePayload(BaseModel):
+    old_folder: str = Field(..., min_length=1, max_length=100)
+    new_folder: str = Field(..., min_length=1, max_length=100)
+
+
 class NoteResponse(NoteBase):
     id: str
     created_at: datetime
