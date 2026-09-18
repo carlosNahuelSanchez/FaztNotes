@@ -20,6 +20,7 @@ const translations = {
     langEn: 'EN',
     langEs: 'ES',
     madeBy: 'Made by the team at',
+    sourceCode: 'SOURCE CODE',
 
     // NotesManager & Explorer
     explorerTitle: 'EXPLORER // FILES',
@@ -166,6 +167,7 @@ const translations = {
     langEn: 'EN',
     langEs: 'ES',
     madeBy: 'Hecho por el equipo de',
+    sourceCode: 'CÓDIGO FUENTE',
 
     // NotesManager & Explorer
     explorerTitle: 'EXPLORADOR // ARCHIVOS',

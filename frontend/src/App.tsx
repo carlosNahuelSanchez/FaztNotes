@@ -4,6 +4,7 @@ import { checkHealth } from './api';
 import { Header } from './components/Header';
 import { NotesManager } from './components/NotesManager';
 import { NexoConsole } from './components/NexoConsole';
+import { GithubIcon } from './components/CyberIcons';
 import { useI18n } from './i18n';
 
 export function App() {
@@ -66,8 +67,8 @@ export function App() {
         )}
       </main>
 
-      <footer className="border-t border-nexo-850 bg-nexo-900 px-4 py-1.5 flex items-center justify-between font-mono text-[11px] text-nexo-500 select-none shrink-0">
-        <div className="flex items-center gap-2">
+      <footer className="border-t border-nexo-850 bg-nexo-900 px-4 py-1.5 flex items-center justify-between font-mono text-[11px] text-nexo-500 select-none shrink-0 flex-wrap gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <span>NEXONOTES v1.0</span>
           <span className="text-nexo-700">│</span>
           <span>{t.madeBy}</span>
@@ -78,6 +79,17 @@ export function App() {
             className="text-nexo-accent font-bold hover:text-emerald-300 hover:underline transition-all duration-200 tracking-wider"
           >
             NEXUS STUDIO
+          </a>
+          <span className="text-nexo-700">│</span>
+          <a
+            href="https://github.com/carlosNahuelSanchez/NexoNotes"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 bg-nexo-950 border border-nexo-700 hover:border-emerald-400 text-nexo-300 hover:text-emerald-300 px-2 py-0.5 text-[10px] font-bold transition-all duration-200"
+            title={t.sourceCode}
+          >
+            <GithubIcon className="w-3.5 h-3.5 shrink-0" />
+            <span>{t.sourceCode}</span>
           </a>
         </div>
         <div className="hidden lg:flex items-center gap-2 text-nexo-600 text-[10px]">
