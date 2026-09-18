@@ -1,5 +1,5 @@
 // ponytail: 2-panel IDE layout (VS Code style explorer on left, full Markdown reading/editing on right)
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Note, NoteCreatePayload } from '../types';
 import {
   fetchNotes,
@@ -46,9 +46,31 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
   const [saving, setSaving] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; title: string } | null>(null);
   const [deleteFolderConfirm, setDeleteFolderConfirm] = useState<string | null>(null);
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [status, setStatus] = useState<{
+    text: string;
+    type: 'loading' | 'success' | 'error';
+  } | null>(null);
   const [systemError, setSystemError] = useState<string | null>(null);
   const [importWarnings, setImportWarnings] = useState<string[]>([]);
+
+  const setStatusMessage = useCallback((msg: string | null, type?: 'loading' | 'success' | 'error') => {
+    if (!msg) {
+      setStatus(null);
+      return;
+    }
+    if (type) {
+      setStatus({ text: msg, type });
+      return;
+    }
+    const lower = msg.toLowerCase();
+    if (lower.includes('[fail]') || lower.includes('[error]') || lower.includes('falló') || lower.includes('fallo') || lower.includes('error')) {
+      setStatus({ text: msg, type: 'error' });
+    } else if (lower.includes('cargando') || lower.includes('guardando') || lower.includes('procesando') || lower.includes('importando') || lower.includes('eliminando') || lower.includes('pegando')) {
+      setStatus({ text: msg, type: 'loading' });
+    } else {
+      setStatus({ text: msg, type: 'success' });
+    }
+  }, []);
 
   const loadData = useCallback(async () => {
     try {
@@ -92,7 +114,7 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
   // Save handler: saves to database and checks for embedding / Gemini errors
   const handleSaveNote = async (payload: NoteCreatePayload, id?: string) => {
     setSaving(true);
-    setStatusMessage(null);
+    setStatusMessage(id ? 'Guardando nota...' : 'Creando nota...', 'loading');
     setSystemError(null);
     try {
       let saved: Note;
@@ -108,14 +130,16 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
         setStatusMessage(
           t.noteVectorFailed
             ? t.noteVectorFailed.replace('{title}', saved.title).replace('{error}', saved.embedding_error)
-            : `[ERROR] Falló la vectorización: ${saved.embedding_error}`
+            : `[ERROR] Falló la vectorización: ${saved.embedding_error}`,
+          'error'
         );
       } else {
         setSystemError(null);
         setStatusMessage(
           id
             ? t.noteSavedOk.replace('{title}', saved.title)
-            : t.noteCreatedOk.replace('{title}', saved.title)
+            : t.noteCreatedOk.replace('{title}', saved.title),
+          'success'
         );
       }
 
@@ -149,7 +173,7 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
   };
 
   const handleImportFile = async (file: File, folderTarget?: string | null) => {
-    setStatusMessage(t.importingFile);
+    setStatusMessage(t.importingFile, 'loading');
     setSystemError(null);
     setImportWarnings([]);
     try {
@@ -166,12 +190,12 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
           setSystemError(null);
         }
         if (res.imported_count > 1) {
-          setStatusMessage(t.importZipSuccess.replace('{count}', String(res.imported_count)));
+          setStatusMessage(t.importZipSuccess.replace('{count}', String(res.imported_count)), 'success');
         } else {
-          setStatusMessage(t.importSuccess.replace('{title}', first.title));
+          setStatusMessage(t.importSuccess.replace('{title}', first.title), 'success');
         }
       } else if (!res.success) {
-        setStatusMessage('[ADVERTENCIA] No se pudo importar ninguna nota. Revisa los archivos descartados.');
+        setStatusMessage('[ADVERTENCIA] No se pudo importar ninguna nota. Revisa los archivos descartados.', 'error');
       }
       setIsEditing(false);
       setTargetFolderForNewNote(null);
@@ -180,27 +204,28 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error al importar documento';
       setSystemError(msg);
-      setStatusMessage(`[FAIL] ${msg}`);
+      setStatusMessage(`[FAIL] ${msg}`, 'error');
     }
   };
 
   const handleDropNoteOnFolder = async (noteId: string, folderTarget: string | null) => {
     try {
+      setStatusMessage('Moviendo nota...', 'loading');
       const targetDisplay = folderTarget ? `/${folderTarget}` : 'root';
       await updateNote(noteId, { folder: folderTarget });
-      setStatusMessage(t.noteTransferred.replace('{target}', targetDisplay));
+      setStatusMessage(t.noteTransferred.replace('{target}', targetDisplay), 'success');
       await loadData();
       onDataChanged();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : t.errorMoving;
       setSystemError(msg);
-      setStatusMessage(`[FAIL] ${msg}`);
+      setStatusMessage(`[FAIL] ${msg}`, 'error');
     }
   };
 
   const handleMoveFolder = async (sourceFolder: string, targetFolder: string | null) => {
     if (targetFolder === sourceFolder || (targetFolder && targetFolder.startsWith(`${sourceFolder}/`))) {
-      setStatusMessage(`[FAIL] No se puede mover '/${sourceFolder}' dentro de sí misma.`);
+      setStatusMessage(`[FAIL] No se puede mover '/${sourceFolder}' dentro de sí misma.`, 'error');
       return;
     }
 
@@ -210,6 +235,7 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
     if (newSourcePath === sourceFolder) return;
 
     try {
+      setStatusMessage(`Moviendo carpeta '/${sourceFolder}'...`, 'loading');
       const affectedNotes = notes.filter(
         (n) => n.folder === sourceFolder || (n.folder && n.folder.startsWith(`${sourceFolder}/`))
       );
@@ -239,13 +265,13 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
       });
 
       const targetDisplay = targetFolder ? `/${targetFolder}` : 'root';
-      setStatusMessage(`[SISTEMA] Carpeta '/${sourceFolder}' movida a '${targetDisplay}'`);
+      setStatusMessage(`[SISTEMA] Carpeta '/${sourceFolder}' movida a '${targetDisplay}'`, 'success');
       await loadData();
       onDataChanged();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error al mover carpeta';
       setSystemError(msg);
-      setStatusMessage(`[FAIL] ${msg}`);
+      setStatusMessage(`[FAIL] ${msg}`, 'error');
     }
   };
 
@@ -255,14 +281,15 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
 
     setCustomFolders((prev) => Array.from(new Set([...prev, cleanFolder])).sort());
     setFolders((prev) => Array.from(new Set([...prev, cleanFolder])).sort());
-    setStatusMessage(t.folderCreated.replace('{folder}', cleanFolder));
+    setStatusMessage(t.folderCreated.replace('{folder}', cleanFolder), 'success');
   };
 
   const handleDeleteConfirmed = async () => {
     if (!deleteConfirm) return;
     try {
+      setStatusMessage('Eliminando nota...', 'loading');
       await deleteNote(deleteConfirm.id);
-      setStatusMessage(t.recordPurged.replace('{id}', deleteConfirm.id));
+      setStatusMessage(t.recordPurged.replace('{id}', deleteConfirm.id), 'success');
       if (selectedNote?.id === deleteConfirm.id) {
         setSelectedNote(null);
         setIsEditing(false);
@@ -273,7 +300,7 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : t.errorDeleting;
       setSystemError(msg);
-      setStatusMessage(`[FAIL] ${msg}`);
+      setStatusMessage(`[FAIL] ${msg}`, 'error');
     }
   };
 
@@ -281,8 +308,9 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
     if (!deleteFolderConfirm) return;
     const folderTarget = deleteFolderConfirm;
     try {
+      setStatusMessage(`Eliminando carpeta '/${folderTarget}'...`, 'loading');
       await deleteFolder(folderTarget);
-      setStatusMessage(t.folderDeletedOk.replace('{folder}', folderTarget));
+      setStatusMessage(t.folderDeletedOk.replace('{folder}', folderTarget), 'success');
       if (
         selectedNote &&
         selectedNote.folder &&
@@ -297,7 +325,7 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error al eliminar carpeta';
       setSystemError(msg);
-      setStatusMessage(`[FAIL] ${msg}`);
+      setStatusMessage(`[FAIL] ${msg}`, 'error');
       setDeleteFolderConfirm(null);
     }
   };
@@ -308,7 +336,7 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
       data: note,
       name: `${note.title}.md`
     });
-    setStatusMessage(t.itemCopied.replace('{name}', `${note.title}.md`));
+    setStatusMessage(t.itemCopied.replace('{name}', `${note.title}.md`), 'success');
   }, [t.itemCopied]);
 
   const handleCopyFolder = useCallback((folderPath: string) => {
@@ -317,16 +345,17 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
       path: folderPath,
       name: `/${folderPath}`
     });
-    setStatusMessage(t.itemCopied.replace('{name}', `/${folderPath}`));
+    setStatusMessage(t.itemCopied.replace('{name}', `/${folderPath}`), 'success');
   }, [t.itemCopied]);
 
   const handlePaste = useCallback(async (targetFolder: string | null) => {
     if (!clipboard) {
-      setStatusMessage(t.clipboardEmpty);
+      setStatusMessage(t.clipboardEmpty, 'error');
       return;
     }
     const dest = targetFolder !== undefined ? targetFolder : selectedFolder;
     try {
+      setStatusMessage('Pegando elemento...', 'loading');
       if (clipboard.type === 'note' && clipboard.data) {
         const isSameFolder = (clipboard.data.folder || null) === (dest || null);
         const newTitle = isSameFolder ? `${clipboard.data.title} (copia)` : clipboard.data.title;
@@ -336,7 +365,7 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
           tags: clipboard.data.tags,
           folder: dest || null
         });
-        setStatusMessage(t.itemPasted.replace('{target}', dest ? `/${dest}` : t.noFolderRoot));
+        setStatusMessage(t.itemPasted.replace('{target}', dest ? `/${dest}` : t.noFolderRoot), 'success');
       } else if (clipboard.type === 'folder' && clipboard.path) {
         const srcPath = clipboard.path;
         const folderName = srcPath.split('/').pop() || 'copia';
@@ -348,7 +377,7 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
           (n) => n.folder === srcPath || (n.folder && n.folder.startsWith(`${srcPath}/`))
         );
         for (const n of notesToCopy) {
-          const subRelative = n.folder === srcPath ? '' : n.folder.slice(srcPath.length);
+          const subRelative = (n.folder && n.folder !== srcPath) ? n.folder.slice(srcPath.length) : '';
           const newNoteFolder = subRelative ? `${destFolder}${subRelative}` : destFolder;
           await createNote({
             title: n.title,
@@ -359,11 +388,11 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
         }
         await loadData();
         onDataChanged();
-        setStatusMessage(t.itemPasted.replace('{target}', `/${destFolder}`));
+        setStatusMessage(t.itemPasted.replace('{target}', `/${destFolder}`), 'success');
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error al pegar elemento';
-      setStatusMessage(`[FAIL] ${msg}`);
+      setStatusMessage(`[FAIL] ${msg}`, 'error');
     }
   }, [clipboard, selectedFolder, notes, t.clipboardEmpty, t.itemPasted, t.noFolderRoot, onDataChanged, loadData]);
 
@@ -489,14 +518,33 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
         </div>
       )}
 
-      {/* Global Status Banner (subtle feedback) */}
-      {statusMessage && !systemError && (
-        <div className="bg-nexo-900 border-b border-nexo-800 px-3 py-1 font-mono text-[11px] text-nexo-300 flex justify-between items-center shrink-0">
-          <span>{statusMessage}</span>
+      {/* Global Status Banner (subtle feedback: grey for loading, green for success, red for error) */}
+      {status && (
+        <div
+          className={`border-b px-3 py-1.5 font-mono text-[11px] flex justify-between items-center shrink-0 transition-colors ${
+            status.type === 'loading'
+              ? 'bg-neutral-900 border-neutral-700 text-neutral-400'
+              : status.type === 'error'
+              ? 'bg-red-950/80 border-red-500/60 text-red-400'
+              : 'bg-emerald-950/80 border-emerald-500/60 text-emerald-400'
+          }`}
+        >
+          <span className="flex items-center gap-2">
+            {status.type === 'loading' && (
+              <span className="inline-block w-2 h-2 rounded-full bg-neutral-400 animate-pulse shrink-0" />
+            )}
+            {status.type === 'success' && (
+              <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
+            )}
+            {status.type === 'error' && (
+              <span className="inline-block w-2 h-2 rounded-full bg-red-400 shrink-0" />
+            )}
+            <span>{status.text}</span>
+          </span>
           <button
             type="button"
             onClick={() => setStatusMessage(null)}
-            className="text-nexo-500 hover:text-white text-xs px-1 font-mono"
+            className="opacity-70 hover:opacity-100 text-xs px-1 font-mono cursor-pointer"
           >
             [X]
           </button>
