@@ -290,7 +290,11 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
         if (res.imported_count > 1) {
           setStatusMessage(t.importZipSuccess.replace('{count}', String(res.imported_count)), 'success');
         } else {
-          setStatusMessage(t.importSuccess.replace('{title}', first.title), 'success');
+          const isMdFile = file.name.match(/\.(md|markdown|txt)$/i);
+          const msg = isMdFile
+            ? (t.importMdSuccess || "[OK] Archivo '{title}' importado correctamente.").replace('{title}', first.title)
+            : t.importSuccess.replace('{title}', first.title);
+          setStatusMessage(msg, 'success');
         }
       } else if (!res.success) {
         setStatusMessage('[ADVERTENCIA] No se pudo importar ninguna nota. Revisa los archivos descartados.', 'error');

@@ -186,7 +186,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
               {t.folderInputLabel}
             </label>
             <span className="text-nexo-500 text-[10px] font-mono">
-              {folder ? `/${folder}` : t.noFolderRoot}
+              {folder ? `/${folder}` : ''}
             </span>
           </div>
           <input

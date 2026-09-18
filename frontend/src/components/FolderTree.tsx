@@ -210,6 +210,16 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
     e.stopPropagation();
     setDragOverFolder(null);
 
+    // Case 1: External files dropped from OS file manager / desktop
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const filesArray = Array.from(e.dataTransfer.files);
+      for (const file of filesArray) {
+        onImportFile(file, folderTarget);
+      }
+      return;
+    }
+
+    // Case 2: Internal drag & drop of notes and folders within the tree
     const rawItem = e.dataTransfer.getData('application/nexo-item');
     if (rawItem) {
       try {
@@ -705,6 +715,14 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
 
       {/* IDE Tree Content Area: acts as root drop target when dragging over root space */}
       <div
+        onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            if (onSelectFolder) onSelectFolder(null);
+            if (onSelectNote) onSelectNote(null as any);
+            setActiveMenuFolder(null);
+            setActiveMenuNote(null);
+          }
+        }}
         onDragOver={(e) => {
           e.preventDefault();
           e.dataTransfer.dropEffect = 'move';
