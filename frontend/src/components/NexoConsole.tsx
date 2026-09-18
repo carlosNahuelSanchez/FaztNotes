@@ -3,6 +3,8 @@ import { ChatMessage, NexoSource } from '../types';
 import { streamNexo } from '../api';
 import { MarkdownView } from './MarkdownView';
 import { AsciiNexo } from './AsciiNexo';
+import { CyberTooltip } from './CyberTooltip';
+import { HelpCircleIcon } from './CyberIcons';
 import { useI18n } from '../i18n';
 
 export const NexoConsole: React.FC = () => {
@@ -124,12 +126,17 @@ export const NexoConsole: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1 text-[11px]">
-            <span className="text-nexo-600">{t.topKLabel}</span>
+          <div className="flex items-center gap-1.5 text-[11px] font-mono">
+            <span className="text-nexo-400 font-bold uppercase tracking-wider">{t.topKLabel}</span>
+            <CyberTooltip text={t.topKTooltip} position="bottom" maxWidth="w-64">
+              <span className="text-nexo-500 hover:text-emerald-400 cursor-help transition-colors flex items-center">
+                <HelpCircleIcon className="w-3.5 h-3.5" />
+              </span>
+            </CyberTooltip>
             <select
               value={topK}
               onChange={(e) => setTopK(Number(e.target.value))}
-              className="bg-nexo-950 border border-nexo-800 px-1 py-0.5 text-nexo-200 focus:outline-none"
+              className="bg-nexo-950 border border-nexo-800 px-1.5 py-0.5 text-nexo-200 focus:outline-none ml-1 font-mono text-xs"
             >
               <option value={2}>2</option>
               <option value={4}>4</option>

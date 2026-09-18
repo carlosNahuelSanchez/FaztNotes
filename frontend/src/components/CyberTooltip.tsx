@@ -6,6 +6,7 @@ interface CyberTooltipProps {
   children: React.ReactNode;
   className?: string;
   position?: 'top' | 'bottom';
+  maxWidth?: string;
 }
 
 const GLYPHS = "!<>-_\\/[]{}—=+*^?#_$%&01";
@@ -14,7 +15,8 @@ export const CyberTooltip: React.FC<CyberTooltipProps> = ({
   text,
   children,
   className = '',
-  position = 'bottom'
+  position = 'bottom',
+  maxWidth
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [displayText, setDisplayText] = useState(text);
@@ -70,9 +72,11 @@ export const CyberTooltip: React.FC<CyberTooltipProps> = ({
         <div
           className={`absolute ${
             isBottom ? 'top-full mt-2' : 'bottom-full mb-2'
-          } left-1/2 -translate-x-1/2 z-50 pointer-events-none whitespace-nowrap bg-black/95 border border-emerald-500/80 text-emerald-300 font-mono text-[10px] px-2 py-0.5 shadow-xl shadow-emerald-950/60 flex items-center gap-1`}
+          } left-1/2 -translate-x-1/2 z-50 pointer-events-none ${
+            maxWidth ? `${maxWidth} whitespace-normal text-left leading-tight` : 'whitespace-nowrap'
+          } bg-black/95 border border-emerald-500/80 text-emerald-300 font-mono text-[10px] px-2 py-1 shadow-xl shadow-emerald-950/60 flex items-start gap-1`}
         >
-          <span className="text-emerald-400 font-bold">&gt;</span>
+          <span className="text-emerald-400 font-bold shrink-0">&gt;</span>
           <span>{displayText}</span>
           {/* Arrow */}
           <div

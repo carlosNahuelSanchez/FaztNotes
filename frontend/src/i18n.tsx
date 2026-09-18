@@ -126,7 +126,9 @@ const translations = {
     // NexoConsole
     nexoConsoleTitle: 'NEXO EXECUTIVE CONSOLE // RAG ENGINE',
     nexoSubtitle: '[INFERENCE ENGINE: ACTIVE | RAG ENGINE: CONNECTED]',
-    topKLabel: 'TOP-K:',
+    topKLabel: 'NOTAS CONTEXTO:',
+    topKTooltip: 'Number of most relevant notes that the RAG engine retrieves using pgvector to provide context to Nexo.',
+    systemIdle: 'Standing by for command or interaction',
     clearSession: 'CLEAR SESSION',
     welcomeTitle: 'NEXO // DOCUMENTATION ENGINE & ASSISTANT',
     welcomeSubtitle: 'GENERATIVE RETRIEVAL AND QUERY SYSTEM',
@@ -270,7 +272,9 @@ const translations = {
     // NexoConsole
     nexoConsoleTitle: 'CONSOLA EJECUTIVA NEXO // RAG ENGINE',
     nexoSubtitle: '[MOTOR DE INFERENCIA: ACTIVO | MOTOR RAG: CONECTADO]',
-    topKLabel: 'TOP-K:',
+    topKLabel: 'NOTAS CONTEXTO:',
+    topKTooltip: 'Cantidad de notas más relevantes que el motor RAG busca con pgvector y provee a Nexo como base de conocimiento para contestar.',
+    systemIdle: 'En espera de comando o interacción',
     clearSession: 'LIMPIAR SESION',
     welcomeTitle: 'NEXO // MOTOR DOCUMENTAL Y ASISTENTE',
     welcomeSubtitle: 'SISTEMA DE RECUPERACION GENERATIVA Y CONSULTA',
