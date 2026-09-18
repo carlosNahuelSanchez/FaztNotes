@@ -35,6 +35,7 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
   const [customFolders, setCustomFolders] = useState<string[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
+  const [selectedType, setSelectedType] = useState<'note' | 'folder' | null>(null);
   const [clipboard, setClipboard] = useState<{
     type: 'note' | 'folder';
     data?: Note;
@@ -42,6 +43,13 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
     name: string;
   } | null>(null);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
+
+  const selectedTypeRef = useRef<'note' | 'folder' | null>(selectedType);
+  selectedTypeRef.current = selectedType;
+  const selectedFolderRef = useRef<string | null>(selectedFolder);
+  selectedFolderRef.current = selectedFolder;
+  const selectedNoteRef = useRef<Note | null>(selectedNote);
+  selectedNoteRef.current = selectedNote;
   const [isEditing, setIsEditing] = useState(false);
   const [targetFolderForNewNote, setTargetFolderForNewNote] = useState<string | null>(null);
   const [, setLoading] = useState(true);
@@ -586,24 +594,44 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
       if (!isInput) {
         // Delete / Supr
         if (e.key === 'Delete' || e.key === 'Del') {
-          if (selectedNote) {
+          const curType = selectedTypeRef.current;
+          const curFolder = selectedFolderRef.current;
+          const curNote = selectedNoteRef.current;
+
+          if (curType === 'folder' && curFolder) {
             e.preventDefault();
-            setDeleteConfirm({ id: selectedNote.id, title: selectedNote.title });
-          } else if (selectedFolder) {
+            setDeleteFolderConfirm(curFolder);
+          } else if (curType === 'note' && curNote) {
             e.preventDefault();
-            setDeleteFolderConfirm(selectedFolder);
+            setDeleteConfirm({ id: curNote.id, title: curNote.title });
+          } else if (curFolder && !curNote) {
+            e.preventDefault();
+            setDeleteFolderConfirm(curFolder);
+          } else if (curNote) {
+            e.preventDefault();
+            setDeleteConfirm({ id: curNote.id, title: curNote.title });
           }
           return;
         }
 
         // Ctrl+C / Cmd+C
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c') {
-          if (selectedNote) {
+          const curType = selectedTypeRef.current;
+          const curFolder = selectedFolderRef.current;
+          const curNote = selectedNoteRef.current;
+
+          if (curType === 'folder' && curFolder) {
             e.preventDefault();
-            handleCopyNote(selectedNote);
-          } else if (selectedFolder) {
+            handleCopyFolder(curFolder);
+          } else if (curType === 'note' && curNote) {
             e.preventDefault();
-            handleCopyFolder(selectedFolder);
+            handleCopyNote(curNote);
+          } else if (curFolder && !curNote) {
+            e.preventDefault();
+            handleCopyFolder(curFolder);
+          } else if (curNote) {
+            e.preventDefault();
+            handleCopyNote(curNote);
           }
           return;
         }
@@ -755,17 +783,21 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
             folders={folders}
             selectedNoteId={selectedNote?.id || null}
             selectedFolder={selectedFolder}
+            selectedType={selectedType}
+            onSelectType={setSelectedType}
             onSelectFolder={(folder) => {
               setSelectedFolder(folder);
-              setSelectedNote(null);
+              setSelectedType(folder ? 'folder' : null);
             }}
             onSelectNote={(note) => {
               if (note) {
                 setSelectedNote(note);
+                setSelectedType('note');
                 setIsEditing(false);
                 setSystemError(note.embedding_error || null);
               } else {
                 setSelectedNote(null);
+                setSelectedType(null);
               }
             }}
             onDeleteNote={(id, title) => setDeleteConfirm({ id, title })}
@@ -773,6 +805,7 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
             onCreateFolder={handleCreateFolder}
             onCreateNote={(folder) => {
               setSelectedNote(null);
+              setSelectedType(null);
               setTargetFolderForNewNote(folder || null);
               setIsEditing(true);
             }}
@@ -791,7 +824,14 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
         </div>
 
         {/* Right Panel: Note Viewer / Editor Area */}
-        <div className="flex-1 h-full overflow-hidden flex flex-col bg-nexo-950 relative z-10">
+        <div
+          className="flex-1 h-full overflow-hidden flex flex-col bg-nexo-950 relative z-10"
+          onClick={() => {
+            if (selectedNote && selectedType !== 'note') {
+              setSelectedType('note');
+            }
+          }}
+        >
           {isEditing ? (
             /* Editing / Creating Mode */
             <div className="flex-1 flex flex-col h-full overflow-hidden">
@@ -856,10 +896,10 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
                   <button
                     type="button"
                     onClick={() => handleExportNote(selectedNote)}
-                    className="border border-cyan-500/60 bg-cyan-950/30 text-cyan-300 font-bold px-3 py-1 text-xs hover:bg-cyan-500 hover:text-black transition-colors flex items-center gap-1.5"
+                    className="border border-lime-500/60 bg-lime-950/30 text-lime-300 font-bold px-3 py-1 text-xs hover:bg-lime-400 hover:text-black transition-colors flex items-center gap-1.5"
                     title="Exportar archivo Markdown (.md)"
                   >
-                    <DownloadIcon className="w-3.5 h-3.5" />
+                    <UploadIcon className="w-3.5 h-3.5" />
                     <span>{t.exportNote}</span>
                   </button>
                   <button
@@ -956,7 +996,7 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
                     className="border border-nexo-700 bg-nexo-900 text-nexo-200 hover:text-white hover:border-emerald-500 font-bold px-4 py-1.5 text-xs transition-colors inline-flex items-center gap-1.5"
                     title={t.importHint}
                   >
-                    <UploadIcon className="w-3.5 h-3.5 text-emerald-400" />
+                    <DownloadIcon className="w-3.5 h-3.5 text-emerald-400" />
                     <span>{t.importAction}</span>
                   </button>
                   <input

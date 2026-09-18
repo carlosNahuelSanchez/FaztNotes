@@ -21,6 +21,8 @@ interface FolderTreeProps {
   folders: string[];
   selectedNoteId: string | null;
   selectedFolder?: string | null;
+  selectedType?: 'note' | 'folder' | null;
+  onSelectType?: (type: 'note' | 'folder' | null) => void;
   onSelectFolder?: (folder: string | null) => void;
   onSelectNote: (note: Note) => void;
   onDeleteNote: (id: string, title: string) => void;
@@ -52,6 +54,8 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
   folders,
   selectedNoteId,
   selectedFolder,
+  selectedType,
+  onSelectType,
   onSelectFolder,
   onSelectNote,
   onDeleteNote,
@@ -86,6 +90,21 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
   const [dragOverFolder, setDragOverFolder] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [searchTerm, setSearchTerm] = useState('');
+
+  const activeSelectedType = selectedType !== undefined ? selectedType : lastSelectedType;
+  const setEffectiveSelectedType = (type: 'note' | 'folder' | null) => {
+    setLastSelectedType(type);
+    if (onSelectType) onSelectType(type);
+  };
+
+  const selectedTypeRef = useRef<'note' | 'folder' | null>(activeSelectedType);
+  selectedTypeRef.current = activeSelectedType;
+  const selectedFolderRef = useRef<string | null>(selectedFolder || null);
+  selectedFolderRef.current = selectedFolder || null;
+  const selectedNoteIdRef = useRef<string | null>(selectedNoteId);
+  selectedNoteIdRef.current = selectedNoteId;
+  const notesRef = useRef<Note[]>(notes);
+  notesRef.current = notes;
 
   const startRenameNote = (note: Note) => {
     setActiveMenuNote(null);
@@ -124,20 +143,25 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
           target.isContentEditable
         );
         if (!isInput) {
-          if (lastSelectedType === 'folder' && selectedFolder) {
+          const curType = selectedTypeRef.current;
+          const curFolder = selectedFolderRef.current;
+          const curNoteId = selectedNoteIdRef.current;
+          const curNotes = notesRef.current;
+
+          if (curType === 'folder' && curFolder) {
             e.preventDefault();
-            startRenameFolder(selectedFolder);
-          } else if (lastSelectedType === 'note' && selectedNoteId) {
-            const found = notes.find((n) => n.id === selectedNoteId);
+            startRenameFolder(curFolder);
+          } else if (curType === 'note' && curNoteId) {
+            const found = curNotes.find((n) => n.id === curNoteId);
             if (found) {
               e.preventDefault();
               startRenameNote(found);
             }
-          } else if (selectedFolder && !selectedNoteId) {
+          } else if (curFolder && !curNoteId) {
             e.preventDefault();
-            startRenameFolder(selectedFolder);
-          } else if (selectedNoteId) {
-            const found = notes.find((n) => n.id === selectedNoteId);
+            startRenameFolder(curFolder);
+          } else if (curNoteId) {
+            const found = curNotes.find((n) => n.id === curNoteId);
             if (found) {
               e.preventDefault();
               startRenameNote(found);
@@ -154,9 +178,10 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
         );
         if (!isInput) {
           e.preventDefault();
-          if (selectedFolder) {
-            setCreatingSubFor((prev) => (prev === selectedFolder ? null : selectedFolder));
-            setCollapsed((prev) => ({ ...prev, [selectedFolder]: false }));
+          const curFolder = selectedFolderRef.current;
+          if (curFolder) {
+            setCreatingSubFor((prev) => (prev === curFolder ? null : curFolder));
+            setCollapsed((prev) => ({ ...prev, [curFolder]: false }));
             setIsCreatingRootFolder(false);
           } else {
             setIsCreatingRootFolder((prev) => !prev);
@@ -172,7 +197,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
       window.removeEventListener('click', handleOutsideClick);
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [selectedFolder]);
+  }, []);
 
   // ponytail: Build true hierarchical IDE file tree in a single pass
   const tree = useMemo(() => {
@@ -343,7 +368,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
   // Render a note item in the IDE tree
   const renderNoteItem = (note: Note, depth: number) => {
     if (!matchesSearch(note)) return null;
-    const isSelected = selectedNoteId === note.id;
+    const isSelected = activeSelectedType === 'note' && selectedNoteId === note.id;
 
     if (renamingNoteId === note.id) {
       return (
@@ -395,9 +420,8 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
           e.dataTransfer.effectAllowed = 'move';
         }}
         onClick={() => {
-          setLastSelectedType('note');
+          setEffectiveSelectedType('note');
           onSelectNote(note);
-          if (onSelectFolder) onSelectFolder(note.folder || null);
         }}
         style={{ paddingLeft: `${depth * 14 + 10}px` }}
         className={`group py-1 pr-2 cursor-pointer flex items-center justify-between text-xs transition-colors select-none ${
@@ -479,9 +503,9 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
                     setActiveMenuNote(null);
                     onExportNote(note);
                   }}
-                  className="px-2.5 py-1 text-left text-cyan-400 hover:text-cyan-300 hover:bg-nexo-850 flex items-center gap-2"
+                  className="px-2.5 py-1 text-left text-lime-400 hover:text-lime-300 hover:bg-nexo-850 flex items-center gap-2"
                 >
-                  <DownloadIcon className="w-3 h-3 shrink-0" />
+                  <UploadIcon className="w-3 h-3 shrink-0" />
                   <span>{t.noteOptExport}</span>
                 </button>
               )}
@@ -512,7 +536,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
     const isSearching = !!searchTerm.trim();
     const hasMatch = isSearching ? folderHasMatch(node, searchTerm.trim()) : false;
     const isCollapsed = isSearching ? !hasMatch : !!collapsed[node.fullPath];
-    const isFolderSelected = selectedFolder === node.fullPath;
+    const isFolderSelected = activeSelectedType === 'folder' && selectedFolder === node.fullPath;
     const isDragOver = dragOverFolder === node.fullPath;
     const isAddingSub = creatingSubFor === node.fullPath;
     const directNotes = node.notes;
@@ -581,7 +605,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
           onDrop={(e) => handleDrop(e, node.fullPath)}
           onClick={(e) => {
             toggleFolder(node.fullPath, e);
-            setLastSelectedType('folder');
+            setEffectiveSelectedType('folder');
             if (onSelectFolder) onSelectFolder(node.fullPath);
           }}
           style={{ paddingLeft: `${depth * 14 + 6}px` }}
@@ -672,7 +696,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
                   }}
                   className="px-2.5 py-1 text-left text-emerald-400 hover:text-emerald-300 hover:bg-nexo-850 flex items-center gap-2"
                 >
-                  <UploadIcon className="w-3 h-3 shrink-0" />
+                  <DownloadIcon className="w-3 h-3 shrink-0" />
                   <span>{t.folderOptImport}</span>
                 </button>
 
@@ -684,9 +708,9 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
                       setActiveMenuFolder(null);
                       onExportFolder(node.fullPath);
                     }}
-                    className="px-2.5 py-1 text-left text-cyan-400 hover:text-cyan-300 hover:bg-nexo-850 flex items-center gap-2"
+                    className="px-2.5 py-1 text-left text-lime-400 hover:text-lime-300 hover:bg-nexo-850 flex items-center gap-2"
                   >
-                    <DownloadIcon className="w-3 h-3 shrink-0" />
+                    <UploadIcon className="w-3 h-3 shrink-0" />
                     <span>{t.folderOptExport}</span>
                   </button>
                 )}
@@ -804,7 +828,12 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
         <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
           <button
             type="button"
-            onClick={() => onCreateNote(selectedFolder || null)}
+            onClick={() => {
+              const targetFolder = activeSelectedType === 'folder'
+                ? (selectedFolder || null)
+                : (notes.find((n) => n.id === selectedNoteId)?.folder || selectedFolder || null);
+              onCreateNote(targetFolder);
+            }}
             className="flex-1 text-center bg-nexo-accent hover:bg-emerald-400 text-black font-bold text-[10px] py-1 transition-colors uppercase tracking-wider truncate"
             title="Crear nueva nota"
           >
@@ -829,7 +858,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
               className="text-emerald-400 hover:text-white p-1 border border-emerald-500/40 bg-emerald-950/20 hover:bg-emerald-900/60 font-bold flex items-center justify-center transition-colors shrink-0"
               aria-label={t.importBtn}
             >
-              <UploadIcon className="w-3.5 h-3.5" />
+              <DownloadIcon className="w-3.5 h-3.5" />
             </button>
           </CyberTooltip>
           {onExportFolder && (
@@ -837,10 +866,10 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
               <button
                 type="button"
                 onClick={() => onExportFolder(null)}
-                className="text-cyan-400 hover:text-white p-1 border border-cyan-500/40 bg-cyan-950/20 hover:bg-cyan-900/60 font-bold flex items-center justify-center transition-colors shrink-0"
+                className="text-lime-400 hover:text-white p-1 border border-lime-500/40 bg-lime-950/20 hover:bg-lime-900/60 font-bold flex items-center justify-center transition-colors shrink-0"
                 aria-label={t.exportAll}
               >
-                <DownloadIcon className="w-3.5 h-3.5" />
+                <UploadIcon className="w-3.5 h-3.5" />
               </button>
             </CyberTooltip>
           )}
@@ -904,7 +933,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
       <div
         onClick={(e) => {
           if (e.target === e.currentTarget) {
-            setLastSelectedType(null);
+            setEffectiveSelectedType(null);
             if (onSelectFolder) onSelectFolder(null);
             if (onSelectNote) onSelectNote(null as any);
             setActiveMenuFolder(null);
