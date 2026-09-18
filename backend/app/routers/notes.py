@@ -427,8 +427,8 @@ def update_note(note_id: str, payload: NoteUpdate, db: Session = Depends(get_db)
             changed = True
             re_embed = True
 
-    if payload.folder is not None:
-        clean_folder = payload.folder.strip() if payload.folder.strip() else None
+    if "folder" in payload.model_fields_set:
+        clean_folder = payload.folder.strip() if (payload.folder and payload.folder.strip()) else None
         if clean_folder != note.folder:
             note.folder = clean_folder
             changed = True
