@@ -1,10 +1,13 @@
 import React from 'react';
 import { HealthStatus } from '../types';
 import { useI18n } from '../i18n';
+import { BarChartIcon, McpIcon } from './CyberIcons';
+import { CyberTooltip } from './CyberTooltip';
 
 interface HeaderProps {
-  activeTab: 'notes' | 'nexo';
-  onTabChange: (tab: 'notes' | 'nexo') => void;
+  activeTab: 'notes' | 'nexo' | 'stats';
+  onTabChange: (tab: 'notes' | 'nexo' | 'stats') => void;
+  onOpenMcp: () => void;
   health: HealthStatus | null;
   loadingHealth: boolean;
 }
@@ -12,6 +15,7 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({
   activeTab,
   onTabChange,
+  onOpenMcp,
   health,
   loadingHealth
 }) => {
@@ -55,6 +59,32 @@ export const Header: React.FC<HeaderProps> = ({
           >
             {t.tabNexo}
           </button>
+          <CyberTooltip text="Estadísticas [F3]" position="bottom" align="center">
+            <button
+              type="button"
+              onClick={() => onTabChange('stats')}
+              className={`px-2.5 py-1.5 transition-colors flex items-center justify-center border-l border-nexo-700 ${
+                activeTab === 'stats'
+                  ? 'bg-nexo-accent text-black'
+                  : 'text-nexo-400 hover:text-white hover:bg-nexo-850'
+              }`}
+              title="Estadísticas [F3]"
+              aria-label="Estadísticas"
+            >
+              <BarChartIcon className="w-4 h-4" />
+            </button>
+          </CyberTooltip>
+          <CyberTooltip text="Integración MCP [8781]" position="bottom" align="center">
+            <button
+              type="button"
+              onClick={onOpenMcp}
+              className="px-2.5 py-1.5 transition-colors flex items-center justify-center border-l border-nexo-700 text-nexo-400 hover:text-emerald-300 hover:bg-nexo-850"
+              title="Integración MCP [8781]"
+              aria-label="Integración MCP"
+            >
+              <McpIcon className="w-4 h-4" />
+            </button>
+          </CyberTooltip>
         </nav>
       </div>
 

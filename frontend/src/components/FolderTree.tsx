@@ -36,6 +36,7 @@ interface FolderTreeProps {
   onCopyFolder?: (folderPath: string) => void;
   onPaste?: (targetFolder: string | null) => void;
   hasClipboardItem?: boolean;
+  hasTagFilter?: boolean;
   onDropNoteOnFolder: (noteId: string, folderName: string | null) => void;
   onMoveFolder: (sourceFolder: string, targetFolder: string | null) => void;
   onRenameNote?: (note: Note, newTitle: string) => void;
@@ -69,6 +70,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
   onCopyFolder,
   onPaste,
   hasClipboardItem = false,
+  hasTagFilter = false,
   onDropNoteOnFolder,
   onMoveFolder,
   onRenameNote,
@@ -88,7 +90,8 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
   const [renameFolderName, setRenameFolderName] = useState<string>('');
   const [lastSelectedType, setLastSelectedType] = useState<'note' | 'folder' | null>(null);
   const [dragOverFolder, setDragOverFolder] = useState<string | null>(null);
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  // ponytail: Folders are CLOSED by default. expanded map tracks manually opened folders.
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [searchTerm, setSearchTerm] = useState('');
 
   const activeSelectedType = selectedType !== undefined ? selectedType : lastSelectedType;
@@ -105,6 +108,23 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
   selectedNoteIdRef.current = selectedNoteId;
   const notesRef = useRef<Note[]>(notes);
   notesRef.current = notes;
+
+  // Auto-expand folder path when a note is selected from outside
+  useEffect(() => {
+    if (selectedNoteId) {
+      const selected = notes.find((n) => n.id === selectedNoteId);
+      if (selected && selected.folder) {
+        const parts = selected.folder.split('/').filter(Boolean);
+        let acc = '';
+        const toExpand: Record<string, boolean> = {};
+        for (const part of parts) {
+          acc = acc ? `${acc}/${part}` : part;
+          toExpand[acc] = true;
+        }
+        setExpanded((prev) => ({ ...prev, ...toExpand }));
+      }
+    }
+  }, [selectedNoteId, notes]);
 
   const startRenameNote = (note: Note) => {
     setActiveMenuNote(null);
@@ -181,7 +201,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
           const curFolder = selectedFolderRef.current;
           if (curFolder) {
             setCreatingSubFor((prev) => (prev === curFolder ? null : curFolder));
-            setCollapsed((prev) => ({ ...prev, [curFolder]: false }));
+            setExpanded((prev) => ({ ...prev, [curFolder]: true }));
             setIsCreatingRootFolder(false);
           } else {
             setIsCreatingRootFolder((prev) => !prev);
@@ -282,7 +302,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
 
   const toggleFolder = (fullPath: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setCollapsed((prev) => ({ ...prev, [fullPath]: !prev[fullPath] }));
+    setExpanded((prev) => ({ ...prev, [fullPath]: !prev[fullPath] }));
   };
 
   const handleCreateFolderSubmit = (e: React.FormEvent, parentPath: string | null) => {
@@ -361,6 +381,15 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
     if (node.notes.some((note) => matchesSearch(note))) return true;
     for (const sub of node.subfolders.values()) {
       if (folderHasMatch(sub, query)) return true;
+    }
+    return false;
+  };
+
+  // Helper to check if a folder branch has any notes (used when tag filtering)
+  const folderHasNotes = (node: TreeNode): boolean => {
+    if (node.notes.length > 0) return true;
+    for (const sub of node.subfolders.values()) {
+      if (folderHasNotes(sub)) return true;
     }
     return false;
   };
@@ -534,17 +563,28 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
   // Recursive renderer for folders and their direct immediate notes
   const renderFolderNode = (node: TreeNode, depth: number = 0) => {
     const isSearching = !!searchTerm.trim();
-    const hasMatch = isSearching ? folderHasMatch(node, searchTerm.trim()) : false;
-    const isCollapsed = isSearching ? !hasMatch : !!collapsed[node.fullPath];
+    const hasSearchMatch = isSearching ? folderHasMatch(node, searchTerm.trim()) : false;
+    const hasNotesInBranch = folderHasNotes(node);
+
+    // If tag filter is active, skip empty folders with zero matching notes
+    if (hasTagFilter && !hasNotesInBranch) {
+      return null;
+    }
+
+    // If text searching, skip folders that don't match or contain matching notes
+    if (isSearching && !hasSearchMatch) {
+      return null;
+    }
+
+    // AUTO-EXPAND folders when a search OR tag filter is active so matches are immediately visible!
+    // When no filter is active, default is COLLAPSED/CLOSED unless explicitly opened.
+    const isFilterActive = isSearching || hasTagFilter;
+    const isFolderOpen = isFilterActive ? true : !!expanded[node.fullPath];
     const isFolderSelected = activeSelectedType === 'folder' && selectedFolder === node.fullPath;
     const isDragOver = dragOverFolder === node.fullPath;
     const isAddingSub = creatingSubFor === node.fullPath;
     const directNotes = node.notes;
     const childFolders = Array.from(node.subfolders.values());
-
-    if (isSearching && !hasMatch) {
-      return null;
-    }
 
     if (renamingFolderPath === node.fullPath) {
       return (
@@ -619,7 +659,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
         >
           <div className="flex items-center gap-1.5 truncate flex-1 font-mono">
             <span className="text-nexo-500 group-hover:text-emerald-400 shrink-0 w-3 flex justify-center">
-              {isCollapsed ? <ChevronRightIcon className="w-3 h-3" /> : <ChevronDownIcon className="w-3 h-3" />}
+              {isFolderOpen ? <ChevronDownIcon className="w-3 h-3" /> : <ChevronRightIcon className="w-3 h-3" />}
             </span>
             <FolderIcon className="w-3.5 h-3.5 text-amber-400/90 group-hover:text-amber-300 shrink-0 transition-colors" />
             <span className="truncate font-semibold">{node.name}</span>
@@ -801,7 +841,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
         )}
 
         {/* Expanded Folder Content: Child Folders FIRST, then Direct Immediate Notes */}
-        {!isCollapsed && (
+        {isFolderOpen && (
           <div className="flex flex-col">
             {childFolders.map((subNode) => renderFolderNode(subNode, depth + 1))}
             {directNotes.map((note) => renderNoteItem(note, depth + 1))}

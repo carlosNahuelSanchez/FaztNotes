@@ -23,11 +23,17 @@ import { useI18n } from '../i18n';
 
 interface NotesManagerProps {
   onDataChanged: () => void;
+  targetNoteId?: string | null;
+  onClearTargetNote?: () => void;
 }
 
 const GLYPHS = "!<>-_\\/[]{}—=+*^?#_$%&01";
 
-export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => {
+export const NotesManager: React.FC<NotesManagerProps> = ({
+  onDataChanged,
+  targetNoteId,
+  onClearTargetNote
+}) => {
   const { t } = useI18n();
   const [notes, setNotes] = useState<Note[]>([]);
   const [tags, setTags] = useState<string[]>([]);
@@ -210,6 +216,23 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
   useEffect(() => {
     loadData();
   }, []);
+
+  // Handle external navigation to a specific note (e.g. clicked from Stats Activity popup)
+  useEffect(() => {
+    if (targetNoteId && notes.length > 0) {
+      const found = notes.find((n) => n.id === targetNoteId);
+      if (found) {
+        setSelectedNote(found);
+        setSelectedType('note');
+        setIsEditing(false);
+        setSystemError(found.embedding_error || null);
+        if (found.folder) {
+          setSelectedFolder(found.folder);
+        }
+      }
+      if (onClearTargetNote) onClearTargetNote();
+    }
+  }, [targetNoteId, notes, onClearTargetNote]);
 
   const displayedNotes = useMemo(() => {
     if (selectedTags.length === 0) return notes;
@@ -781,6 +804,7 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
           <FolderTree
             notes={displayedNotes}
             folders={folders}
+            hasTagFilter={selectedTags.length > 0}
             selectedNoteId={selectedNote?.id || null}
             selectedFolder={selectedFolder}
             selectedType={selectedType}

@@ -62,3 +62,19 @@ export interface HealthStatus {
   gemini_configured: boolean;
   total_notes: number;
 }
+
+export interface FolderStat { folder: string; count: number; }
+export interface TagStat { tag: string; count: number; }
+export interface ActivityNote { id: string; title: string; folder?: string | null; tags?: string[]; }
+export interface ActivityStat { date: string; count: number; notes?: ActivityNote[]; }
+
+export interface SystemStatsData {
+  total_notes: number;
+  total_with_embedding: number;
+  embedding_coverage_pct: number;
+  total_folders: number;
+  total_tags: number;
+  notes_by_folder: FolderStat[];
+  notes_by_tag: TagStat[];
+  recent_activity: ActivityStat[];
+}

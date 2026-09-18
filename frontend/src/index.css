@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700;900&family=Share+Tech+Mono&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -133,4 +135,127 @@
 
 .markdown-preview th {
   background-color: #121215;
+}
+
+/* Matrix dashboard effects */
+.matrix-bar {
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.4);
+}
+
+.matrix-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.matrix-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    transparent,
+    transparent 2px,
+    rgba(34, 197, 94, 0.03) 2px,
+    rgba(34, 197, 94, 0.03) 4px
+  );
+  pointer-events: none;
+}
+
+.matrix-text-glow {
+  text-shadow: 0 0 8px rgba(34, 197, 94, 0.6), 0 0 2px rgba(34, 197, 94, 0.8);
+}
+
+.font-square {
+  font-family: 'Chakra Petch', 'Share Tech Mono', 'Consolas', monospace;
+  letter-spacing: 0.08em;
+}
+
+.font-square-nums {
+  font-family: 'Share Tech Mono', 'Chakra Petch', 'Consolas', monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.06em;
+}
+
+@keyframes cyber-scan-flicker {
+  0%, 100% { opacity: 1; }
+  92% { opacity: 1; }
+  93% { opacity: 0.4; }
+  94% { opacity: 1; }
+  96% { opacity: 0.7; }
+  98% { opacity: 1; }
+}
+
+.matrix-flicker {
+  animation: cyber-scan-flicker 6s infinite;
+}
+
+@keyframes popup-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes popup-soft-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes tooltip-soft-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-popup-backdrop {
+  animation: popup-fade-in 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-popup-modal {
+  animation: popup-soft-in 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-tooltip-soft {
+  animation: tooltip-soft-in 0.16s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  header, footer, nav, button {
+    display: none !important;
+  }
+  .matrix-card {
+    border: 1px solid #ccc !important;
+    background: white !important;
+    color: black !important;
+    page-break-inside: avoid;
+  }
+  .matrix-card * {
+    color: black !important;
+    text-shadow: none !important;
+  }
+  .matrix-bar {
+    background: #22c55e !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
 }

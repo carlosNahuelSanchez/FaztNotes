@@ -5,7 +5,8 @@ import {
   NoteImportResult,
   NexoQueryResponse,
   NexoSource,
-  HealthStatus
+  HealthStatus,
+  SystemStatsData
 } from './types';
 
 const API_BASE = '/api';
@@ -257,5 +258,12 @@ export async function checkHealth(): Promise<HealthStatus> {
   if (!res.ok) {
     throw new Error('Servicio degradado o no disponible.');
   }
+  return res.json();
+}
+
+// ponytail: plain fetch, no abstraction
+export async function fetchStats(): Promise<SystemStatsData> {
+  const res = await fetch(`${API_BASE}/stats`);
+  if (!res.ok) throw new Error('Fallo al obtener estadísticas.');
   return res.json();
 }

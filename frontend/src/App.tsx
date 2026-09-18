@@ -4,14 +4,24 @@ import { checkHealth } from './api';
 import { Header } from './components/Header';
 import { NotesManager } from './components/NotesManager';
 import { NexoConsole } from './components/NexoConsole';
+import { SystemStats } from './components/SystemStats';
 import { GithubIcon } from './components/CyberIcons';
 import { useI18n } from './i18n';
 
+import { McpModal } from './components/McpModal';
+
 export function App() {
   const { t } = useI18n();
-  const [activeTab, setActiveTab] = useState<'notes' | 'nexo'>('notes');
+  const [activeTab, setActiveTab] = useState<'notes' | 'nexo' | 'stats'>('notes');
+  const [mcpModalOpen, setMcpModalOpen] = useState(false);
+  const [targetNoteId, setTargetNoteId] = useState<string | null>(null);
   const [health, setHealth] = useState<HealthStatus | null>(null);
   const [loadingHealth, setLoadingHealth] = useState<boolean>(true);
+
+  const handleNavigateToNote = useCallback((noteId: string) => {
+    setTargetNoteId(noteId);
+    setActiveTab('notes');
+  }, []);
 
   const refreshHealth = useCallback(async () => {
     try {
@@ -35,7 +45,7 @@ export function App() {
     return () => clearInterval(interval);
   }, [refreshHealth]);
 
-  // Keyboard navigation shortcuts (F1 / F2)
+  // Keyboard navigation shortcuts (F1 / F2 / F3)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'F1') {
@@ -44,6 +54,9 @@ export function App() {
       } else if (e.key === 'F2') {
         e.preventDefault();
         setActiveTab('nexo');
+      } else if (e.key === 'F3') {
+        e.preventDefault();
+        setActiveTab('stats');
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -55,17 +68,28 @@ export function App() {
       <Header
         activeTab={activeTab}
         onTabChange={setActiveTab}
+        onOpenMcp={() => setMcpModalOpen(true)}
         health={health}
         loadingHealth={loadingHealth}
       />
 
-      <main className="flex-1 flex flex-col overflow-hidden">
-        {activeTab === 'notes' ? (
-          <NotesManager onDataChanged={refreshHealth} />
-        ) : (
+      <main className="flex-1 flex flex-col overflow-hidden relative">
+        <div className={`flex-1 flex flex-col overflow-hidden ${activeTab === 'notes' ? '' : 'hidden'}`}>
+          <NotesManager
+            onDataChanged={refreshHealth}
+            targetNoteId={targetNoteId}
+            onClearTargetNote={() => setTargetNoteId(null)}
+          />
+        </div>
+        <div className={`flex-1 flex flex-col overflow-hidden ${activeTab === 'nexo' ? '' : 'hidden'}`}>
           <NexoConsole />
-        )}
+        </div>
+        <div className={`flex-1 flex flex-col overflow-hidden ${activeTab === 'stats' ? '' : 'hidden'}`}>
+          <SystemStats onNavigateToNote={handleNavigateToNote} />
+        </div>
       </main>
+
+      <McpModal isOpen={mcpModalOpen} onClose={() => setMcpModalOpen(false)} />
 
       <footer className="border-t border-nexo-850 bg-nexo-900 px-4 py-1.5 flex items-center justify-between font-mono text-[11px] text-nexo-500 select-none shrink-0 flex-wrap gap-2">
         <div className="flex items-center gap-2 flex-wrap">
@@ -93,7 +117,7 @@ export function App() {
           </a>
         </div>
         <div className="hidden lg:flex items-center gap-2 text-nexo-600 text-[10px]">
-          <span>SHORTCUTS: [F1] NOTAS │ [F2] NEXO │ [ALT+N] +NOTA │ [ALT+F] +CARPETA │ [ALT+R] RENOMBRAR │ [SUPR] BORRAR │ [CTRL+C/V] COPIAR/PEGAR</span>
+          <span>SHORTCUTS: [F1] NOTAS │ [F2] NEXO │ [F3] STATS │ [ALT+N] +NOTA │ [ALT+F] +CARPETA │ [ALT+R] RENOMBRAR │ [SUPR] BORRAR │ [CTRL+C/V] COPIAR/PEGAR</span>
         </div>
       </footer>
     </div>

@@ -152,7 +152,25 @@ const translations = {
     queryPrefix: 'QUERY >',
     queryPlaceholder: "Write your technical query for Nexo (e.g. 'What are the backend endpoints?')...",
     queryButton: 'QUERY [ENTER]',
-    queryButtonStreaming: 'GENERATING RESPONSE...'
+    queryButtonStreaming: 'GENERATING RESPONSE...',
+
+    // Stats Dashboard
+    tabStats: '[3] STATS',
+    statsTitle: 'SYSTEM STATS',
+    statsSubtitle: '// REAL-TIME METRICS',
+    statsTotalNotes: 'TOTAL NOTES',
+    statsTotalVectors: 'VECTORIZED',
+    statsEmbeddingCoverage: 'COVERAGE',
+    statsTotalFolders: 'FOLDERS',
+    statsTotalTags: 'TAGS',
+    statsNotesByFolder: 'NOTES BY FOLDER',
+    statsNotesByTag: 'NOTES BY TAG',
+    statsRecentActivity: 'RECENT ACTIVITY: LAST 14 DAYS',
+    statsNoData: 'No data available',
+    statsLoading: '[LOADING STATS...]',
+    statsExportJson: 'JSON',
+    statsExportExcel: 'EXCEL / CSV',
+    statsExportPdf: 'PDF'
   },
   es: {
     // Header
@@ -303,7 +321,25 @@ const translations = {
     queryPrefix: 'QUERY >',
     queryPlaceholder: "Escriba su consulta tecnica para Nexo (ej: '¿Cuales son los endpoints del backend?')...",
     queryButton: 'CONSULTAR [ENTER]',
-    queryButtonStreaming: 'GENERANDO RESPUESTA...'
+    queryButtonStreaming: 'GENERANDO RESPUESTA...',
+
+    // Stats Dashboard
+    tabStats: '[3] ESTADÍSTICAS',
+    statsTitle: 'ESTADÍSTICAS DEL SISTEMA',
+    statsSubtitle: '// MÉTRICAS EN TIEMPO REAL',
+    statsTotalNotes: 'TOTAL NOTAS',
+    statsTotalVectors: 'VECTORIZADAS',
+    statsEmbeddingCoverage: 'COBERTURA',
+    statsTotalFolders: 'CARPETAS',
+    statsTotalTags: 'ETIQUETAS',
+    statsNotesByFolder: 'NOTAS POR CARPETA',
+    statsNotesByTag: 'NOTAS POR ETIQUETA',
+    statsRecentActivity: 'ACTIVIDAD RECIENTE: ÚLTIMOS 14 DÍAS',
+    statsNoData: 'Sin datos disponibles',
+    statsLoading: '[CARGANDO ESTADÍSTICAS...]',
+    statsExportJson: 'JSON',
+    statsExportExcel: 'EXCEL / CSV',
+    statsExportPdf: 'PDF'
   }
 };
 
