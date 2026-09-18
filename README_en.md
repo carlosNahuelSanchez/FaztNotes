@@ -312,8 +312,25 @@ For custom licensing or enterprise inquiries, contact the team at **Nexus Studio
 
 ---
 
+## Support the Project
+
+If **NexoNotes** streamlines your technical documentation and enhances your productivity with private local RAG, consider supporting ongoing development and the creation of future open-source tools.
+
+<div align="center">
+
+<a href="https://www.buymeacoffee.com/carlosNahuelSanchez" target="_blank">
+  <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="48" />
+</a>
+
+<script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js" data-name="bmc-button" data-slug="carlosNahuelSanchez" data-color="#000000" data-emoji="" data-font="Poppins" data-text="Buy me a coffee" data-outline-color="#ffffff" data-font-color="#ffffff" data-coffee-color="#FFDD00"></script>
+
+</div>
+
+---
+
 <div align="center">
 
 Made by the team at **Nexus Studio**
 
 </div>
+
