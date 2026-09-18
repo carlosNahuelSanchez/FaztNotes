@@ -8,6 +8,7 @@ import {
   createNote,
   updateNote,
   deleteNote,
+  deleteFolder,
   importNoteFile,
   getExportNoteUrl,
   getExportFolderUrl,
@@ -37,6 +38,7 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
   const emptyStateFileRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; title: string } | null>(null);
+  const [deleteFolderConfirm, setDeleteFolderConfirm] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [systemError, setSystemError] = useState<string | null>(null);
   const [importWarnings, setImportWarnings] = useState<string[]>([]);
@@ -261,6 +263,31 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
     }
   };
 
+  const handleDeleteFolderConfirmed = async () => {
+    if (!deleteFolderConfirm) return;
+    const folderTarget = deleteFolderConfirm;
+    try {
+      await deleteFolder(folderTarget);
+      setStatusMessage(t.folderDeletedOk.replace('{folder}', folderTarget));
+      if (
+        selectedNote &&
+        selectedNote.folder &&
+        (selectedNote.folder === folderTarget || selectedNote.folder.startsWith(`${folderTarget}/`))
+      ) {
+        setSelectedNote(null);
+        setIsEditing(false);
+      }
+      setDeleteFolderConfirm(null);
+      await loadData();
+      onDataChanged();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al eliminar carpeta';
+      setSystemError(msg);
+      setStatusMessage(`[FAIL] ${msg}`);
+      setDeleteFolderConfirm(null);
+    }
+  };
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-nexo-950">
       {/* Optional Tag Filter Strip */}
@@ -350,6 +377,7 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
               setSystemError(note.embedding_error || null);
             }}
             onDeleteNote={(id, title) => setDeleteConfirm({ id, title })}
+            onDeleteFolder={(folder) => setDeleteFolderConfirm(folder)}
             onCreateFolder={handleCreateFolder}
             onCreateNote={(folder) => {
               setSelectedNote(null);
@@ -577,7 +605,40 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
                 onClick={handleDeleteConfirmed}
                 className="border border-nexo-alert bg-nexo-alert text-black font-bold px-4 py-1.5 hover:bg-red-500"
               >
-                {t.executePurge}
+                {t.executeDelete}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Folder Deletion Confirmation Modal */}
+      {deleteFolderConfirm && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+          <div className="bg-nexo-900 border-2 border-nexo-alert p-5 max-w-md w-full font-mono">
+            <div className="text-nexo-alert font-bold text-sm mb-3 uppercase tracking-wider">
+              {t.deleteFolderTitle}
+            </div>
+            <div className="text-xs text-nexo-200 mb-4 space-y-2">
+              <p>{t.deleteFolderWarning.replace('{folder}', deleteFolderConfirm)}</p>
+              <div className="bg-nexo-950 p-2 border border-nexo-800">
+                <div><span className="text-nexo-600">CARPETA:</span> /{deleteFolderConfirm}</div>
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 text-xs">
+              <button
+                type="button"
+                onClick={() => setDeleteFolderConfirm(null)}
+                className="border border-nexo-700 px-4 py-1.5 text-nexo-300 hover:text-white"
+              >
+                {t.cancel}
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteFolderConfirmed}
+                className="border border-nexo-alert bg-nexo-alert text-black font-bold px-4 py-1.5 hover:bg-red-500"
+              >
+                {t.executeDelete}
               </button>
             </div>
           </div>

@@ -1,7 +1,17 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Note } from '../types';
 import { useI18n } from '../i18n';
-import { FileCodeIcon, FolderIcon, ChevronRightIcon, ChevronDownIcon, UploadIcon, DownloadIcon } from './CyberIcons';
+import {
+  FileCodeIcon,
+  FolderIcon,
+  ChevronRightIcon,
+  ChevronDownIcon,
+  UploadIcon,
+  DownloadIcon,
+  DotsVerticalIcon,
+  TrashIcon
+} from './CyberIcons';
+import { CyberTooltip } from './CyberTooltip';
 
 interface FolderTreeProps {
   notes: Note[];
@@ -9,6 +19,7 @@ interface FolderTreeProps {
   selectedNoteId: string | null;
   onSelectNote: (note: Note) => void;
   onDeleteNote: (id: string, title: string) => void;
+  onDeleteFolder?: (folderPath: string) => void;
   onCreateFolder: (name: string) => void;
   onCreateNote: (folder?: string | null) => void;
   onImportFile: (file: File, folderTarget?: string | null) => void;
@@ -31,6 +42,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
   selectedNoteId,
   onSelectNote,
   onDeleteNote,
+  onDeleteFolder,
   onCreateFolder,
   onCreateNote,
   onImportFile,
@@ -42,12 +54,26 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
   const { t } = useI18n();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importTargetFolder, setImportTargetFolder] = useState<string | null>(null);
+  const [activeMenuFolder, setActiveMenuFolder] = useState<string | null>(null);
   const [isCreatingRootFolder, setIsCreatingRootFolder] = useState(false);
   const [creatingSubFor, setCreatingSubFor] = useState<string | null>(null);
   const [newFolderName, setNewFolderName] = useState('');
   const [dragOverFolder, setDragOverFolder] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [searchTerm, setSearchTerm] = useState('');
+
+  useEffect(() => {
+    const handleOutsideClick = () => setActiveMenuFolder(null);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setActiveMenuFolder(null);
+    };
+    window.addEventListener('click', handleOutsideClick);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('click', handleOutsideClick);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   // ponytail: Build true hierarchical IDE file tree in a single pass
   const tree = useMemo(() => {
@@ -282,7 +308,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
             <span className="truncate font-semibold">{node.name}</span>
           </div>
 
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity relative">
             {isDragOver && (
               <span className="text-[10px] text-emerald-400 font-bold mr-1">{t.dropHere}</span>
             )}
@@ -290,50 +316,93 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                onCreateNote(node.fullPath);
+                setActiveMenuFolder(activeMenuFolder === node.fullPath ? null : node.fullPath);
               }}
-              className="text-[9px] px-1 border border-nexo-700 bg-nexo-950 text-nexo-accent hover:bg-nexo-800"
-              title="Crear nota aquí"
+              className="text-nexo-400 hover:text-white px-1 py-0.5 border border-transparent hover:border-nexo-700 hover:bg-nexo-850 transition-colors"
+              title="Opciones de carpeta"
             >
-              +NOTA
+              <DotsVerticalIcon className="w-3.5 h-3.5" />
             </button>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                triggerImport(node.fullPath);
-              }}
-              className="text-[9px] px-1 border border-nexo-700 bg-nexo-950 text-emerald-400 hover:text-white hover:bg-nexo-800"
-              title="Importar documento en esta carpeta (Markdown, Word, PDF, ZIP)"
-            >
-              +IMP
-            </button>
-            {onExportFolder && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onExportFolder(node.fullPath);
-                }}
-                className="text-[9px] px-1 border border-nexo-700 bg-nexo-950 text-cyan-400 hover:text-white hover:bg-nexo-800"
-                title="Exportar carpeta como ZIP"
+
+            {activeMenuFolder === node.fullPath && (
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="absolute right-0 top-full mt-1 z-50 w-36 bg-nexo-950 border border-nexo-700 shadow-2xl py-1 font-mono text-xs flex flex-col"
               >
-                EXP
-              </button>
+                {/* 1. Crear nota */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveMenuFolder(null);
+                    onCreateNote(node.fullPath);
+                  }}
+                  className="px-2.5 py-1 text-left text-nexo-200 hover:text-white hover:bg-nexo-850 flex items-center gap-2"
+                >
+                  <FileCodeIcon className="w-3 h-3 text-emerald-400 shrink-0" />
+                  <span>{t.folderOptCreateNote}</span>
+                </button>
+
+                {/* 2. Crear carpeta */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveMenuFolder(null);
+                    setCreatingSubFor(node.fullPath);
+                    setIsCreatingRootFolder(false);
+                    setNewFolderName('');
+                  }}
+                  className="px-2.5 py-1 text-left text-nexo-200 hover:text-white hover:bg-nexo-850 flex items-center gap-2"
+                >
+                  <FolderIcon className="w-3 h-3 text-amber-400 shrink-0" />
+                  <span>{t.folderOptCreateFolder}</span>
+                </button>
+
+                {/* 3. Importar */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveMenuFolder(null);
+                    triggerImport(node.fullPath);
+                  }}
+                  className="px-2.5 py-1 text-left text-emerald-400 hover:text-emerald-300 hover:bg-nexo-850 flex items-center gap-2"
+                >
+                  <UploadIcon className="w-3 h-3 shrink-0" />
+                  <span>{t.folderOptImport}</span>
+                </button>
+
+                {/* 4. Exportar */}
+                {onExportFolder && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveMenuFolder(null);
+                      onExportFolder(node.fullPath);
+                    }}
+                    className="px-2.5 py-1 text-left text-cyan-400 hover:text-cyan-300 hover:bg-nexo-850 flex items-center gap-2"
+                  >
+                    <DownloadIcon className="w-3 h-3 shrink-0" />
+                    <span>{t.folderOptExport}</span>
+                  </button>
+                )}
+
+                <div className="border-t border-nexo-800 my-0.5" />
+
+                {/* 5. Eliminar carpeta */}
+                {onDeleteFolder && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveMenuFolder(null);
+                      onDeleteFolder(node.fullPath);
+                    }}
+                    className="px-2.5 py-1 text-left text-red-400 hover:text-red-300 hover:bg-red-950/50 flex items-center gap-2"
+                  >
+                    <TrashIcon className="w-3 h-3 shrink-0" />
+                    <span>{t.folderOptDelete}</span>
+                  </button>
+                )}
+              </div>
             )}
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setCreatingSubFor(isAddingSub ? null : node.fullPath);
-                setIsCreatingRootFolder(false);
-                setNewFolderName('');
-              }}
-              className="text-[9px] px-1 border border-nexo-700 bg-nexo-950 text-nexo-400 hover:text-white hover:bg-nexo-800"
-              title="Crear subcarpeta"
-            >
-              +SUB
-            </button>
           </div>
         </div>
 
@@ -400,26 +469,6 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
           </button>
           <button
             type="button"
-            onClick={() => triggerImport(null)}
-            className="text-emerald-400 hover:text-emerald-300 text-[10px] px-1.5 py-0.5 border border-emerald-500/40 bg-emerald-950/20 font-bold flex items-center gap-1"
-            title={t.importHint}
-          >
-            <UploadIcon className="w-3 h-3" />
-            <span>{t.importBtn}</span>
-          </button>
-          {onExportFolder && (
-            <button
-              type="button"
-              onClick={() => onExportFolder(null)}
-              className="text-cyan-400 hover:text-cyan-300 text-[10px] px-1.5 py-0.5 border border-cyan-500/40 bg-cyan-950/20 font-bold flex items-center gap-1"
-              title={t.exportAll}
-            >
-              <DownloadIcon className="w-3 h-3" />
-              <span>ZIP</span>
-            </button>
-          )}
-          <button
-            type="button"
             onClick={() => {
               setIsCreatingRootFolder(!isCreatingRootFolder);
               setCreatingSubFor(null);
@@ -430,6 +479,28 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
           >
             {t.createFolderBtn}
           </button>
+          <CyberTooltip text={t.importHint}>
+            <button
+              type="button"
+              onClick={() => triggerImport(null)}
+              className="text-emerald-400 hover:text-white p-1 border border-emerald-500/40 bg-emerald-950/20 hover:bg-emerald-900/60 font-bold flex items-center justify-center transition-colors"
+              aria-label={t.importBtn}
+            >
+              <UploadIcon className="w-3.5 h-3.5" />
+            </button>
+          </CyberTooltip>
+          {onExportFolder && (
+            <CyberTooltip text={t.exportAll}>
+              <button
+                type="button"
+                onClick={() => onExportFolder(null)}
+                className="text-cyan-400 hover:text-white p-1 border border-cyan-500/40 bg-cyan-950/20 hover:bg-cyan-900/60 font-bold flex items-center justify-center transition-colors"
+                aria-label={t.exportAll}
+              >
+                <DownloadIcon className="w-3.5 h-3.5" />
+              </button>
+            </CyberTooltip>
+          )}
         </div>
       </div>
 

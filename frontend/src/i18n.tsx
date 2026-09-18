@@ -58,11 +58,21 @@ const translations = {
     allTags: 'ALL',
     noTags: 'no tags',
 
+    // Folder context menu options
+    folderOptCreateNote: 'Create note',
+    folderOptCreateFolder: 'Create folder',
+    folderOptImport: 'Import',
+    folderOptExport: 'Export',
+    folderOptDelete: 'Delete folder',
+
     // Deletion Modal
-    deleteTitle: '[PERMANENT DELETION CONFIRMATION]',
-    deleteWarning: 'WARNING: This operation will irreversibly remove the record from the database.',
+    deleteTitle: '[CONFIRMATION]',
+    deleteWarning: 'WARNING: This operation will permanently delete the record from the database.',
+    deleteFolderTitle: '[DELETE FOLDER CONFIRMATION]',
+    deleteFolderWarning: 'WARNING: This operation will permanently delete the folder /{folder} and ALL notes and subfolders inside it.',
     cancel: 'CANCEL',
-    executePurge: 'EXECUTE PURGE',
+    executeDelete: 'DELETE',
+    executePurge: 'DELETE',
 
     // System Messages
     noteSavedOk: "[OK] Note '{title}' saved successfully.",
@@ -70,7 +80,8 @@ const translations = {
     noteVectorFailed: "[ERROR] Note '{title}' saved, but vectorization failed: {error}",
     noteTransferred: "[SYSTEM] Note moved to: {target}",
     folderCreated: "[SYSTEM] Folder /{folder} created.",
-    recordPurged: "[OK] Record {id} purged from database.",
+    folderDeletedOk: "[OK] Folder /{folder} and its contents deleted successfully.",
+    recordPurged: "[OK] Note deleted successfully.",
     errorLoading: "Error loading records from database",
     errorProcessing: "Error processing note",
     errorMoving: "Error moving note",
@@ -178,11 +189,21 @@ const translations = {
     allTags: 'TODAS',
     noTags: 'sin etiquetas',
 
+    // Folder context menu options (en orden exacto: crear nota, crear carpeta, importar, exportar, eliminar)
+    folderOptCreateNote: 'Crear nota',
+    folderOptCreateFolder: 'Crear carpeta',
+    folderOptImport: 'Importar',
+    folderOptExport: 'Exportar',
+    folderOptDelete: 'Eliminar carpeta',
+
     // Deletion Modal
-    deleteTitle: '[CONFIRMACION DE ELIMINACION PERMANENTE]',
-    deleteWarning: 'ADVERTENCIA: Esta operacion eliminara de forma irreversible el registro de la base de datos.',
+    deleteTitle: '[CONFIRMACION]',
+    deleteWarning: 'ADVERTENCIA: Esta operacion eliminara de forma permanente la nota de la base de datos.',
+    deleteFolderTitle: '[CONFIRMACION DE ELIMINACION DE CARPETA]',
+    deleteFolderWarning: 'ADVERTENCIA: Esta operacion eliminara la carpeta /{folder} y TODAS las notas y subcarpetas contenidas en ella de forma permanente.',
     cancel: 'CANCELAR',
-    executePurge: 'EJECUTAR PURGA',
+    executeDelete: 'ELIMINAR',
+    executePurge: 'ELIMINAR',
 
     // System Messages
     noteSavedOk: "[OK] Nota '{title}' guardada correctamente.",
@@ -190,7 +211,8 @@ const translations = {
     noteVectorFailed: "[ERROR] Nota '{title}' guardada, pero falló la vectorización: {error}",
     noteTransferred: "[SISTEMA] Nota transferida exitosamente a: {target}",
     folderCreated: "[SISTEMA] Carpeta /{folder} creada.",
-    recordPurged: "[OK] Registro {id} purgado de la base de datos.",
+    folderDeletedOk: "[OK] Carpeta /{folder} y su contenido eliminados correctamente.",
+    recordPurged: "[OK] Nota eliminada correctamente.",
     errorLoading: "Error al cargar registros desde la base de datos",
     errorProcessing: "Error al procesar nota",
     errorMoving: "Error al mover nota",

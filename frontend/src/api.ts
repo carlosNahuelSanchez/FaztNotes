@@ -123,6 +123,18 @@ export async function deleteNote(id: string): Promise<void> {
   }
 }
 
+export async function deleteFolder(folderPath: string): Promise<{ status: string; deleted_folder: string; notes_deleted: number }> {
+  const params = new URLSearchParams({ folder: folderPath });
+  const res = await fetch(`${API_BASE}/notes/folder?${params.toString()}`, {
+    method: 'DELETE'
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Fallo al eliminar la carpeta' }));
+    throw new Error(err.detail || 'Fallo al eliminar la carpeta.');
+  }
+  return res.json();
+}
+
 export async function fetchTags(): Promise<string[]> {
   const res = await fetch(`${API_BASE}/notes/tags`);
   if (!res.ok) {
