@@ -188,7 +188,9 @@ El script te preguntará a qué agente deseas conectar NexoNotes:
 - `[2]` Cursor (`.cursor/mcp.json`)
 - `[3]` Claude Desktop (`claude_desktop_config.json`)
 - `[4]` Windsurf (`~/.codeium/windsurf/mcp_config.json`)
-- `[5]` Todos los anteriores
+- `[5]` Claude Code (`~/.claude.json` / CLI)
+- `[6]` OpenCode (`~/.config/opencode/opencode.json`)
+- `[7]` Todos los anteriores
 
 Para verificar el estado de conexión de tus agentes en cualquier momento:
 

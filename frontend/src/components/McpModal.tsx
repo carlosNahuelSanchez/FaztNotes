@@ -6,7 +6,7 @@ interface McpModalProps {
   onClose: () => void;
 }
 
-type ClientType = 'antigravity' | 'claude' | 'cursor' | 'windsurf';
+type ClientType = 'antigravity' | 'claude' | 'cursor' | 'windsurf' | 'claude_code' | 'opencode';
 
 interface ClientConfig {
   name: string;
@@ -89,6 +89,45 @@ const CLIENT_CONFIGS: Record<ClientType, ClientConfig> = {
       2
     ),
     notes: 'Compatible con Windsurf y extensiones MCP de VS Code (Cline, Roo Code, Continue) usando transporte SSE.'
+  },
+  claude_code: {
+    name: 'Claude Code',
+    badge: 'CLI GLOBAL',
+    configPathWin: '%USERPROFILE%\\.claude.json',
+    configPathMac: '~/.claude.json',
+    jsonConfig: JSON.stringify(
+      {
+        mcpServers: {
+          nexonotes: {
+            type: 'http',
+            url: 'http://localhost:8781/sse'
+          }
+        }
+      },
+      null,
+      2
+    ),
+    notes: 'También puedes conectarlo por CLI ejecutando: claude mcp add --transport sse nexonotes http://localhost:8781/sse'
+  },
+  opencode: {
+    name: 'OpenCode',
+    badge: 'REMOTE MCP',
+    configPathWin: '%USERPROFILE%\\.config\\opencode\\opencode.json',
+    configPathMac: '~/.config/opencode/opencode.json',
+    jsonConfig: JSON.stringify(
+      {
+        mcp: {
+          nexonotes: {
+            type: 'remote',
+            url: 'http://localhost:8781/sse',
+            enabled: true
+          }
+        }
+      },
+      null,
+      2
+    ),
+    notes: 'OpenCode utiliza la clave "mcp" y "type": "remote". También puedes ubicarlo en la raíz del repo como opencode.json.'
   }
 };
 

@@ -28,6 +28,7 @@ def get_agent_configs():
         "1": {
             "name": "Antigravity (Global)",
             "key": "antigravity",
+            "root_key": "mcpServers",
             "path": home / ".gemini" / "config" / "mcp_config.json",
             "entry": {
                 "serverUrl": "http://localhost:8781/sse"
@@ -36,6 +37,7 @@ def get_agent_configs():
         "2": {
             "name": "Cursor (Proyecto local)",
             "key": "cursor",
+            "root_key": "mcpServers",
             "path": REPO_ROOT / ".cursor" / "mcp.json",
             "entry": {
                 "url": "http://localhost:8781/sse"
@@ -44,6 +46,7 @@ def get_agent_configs():
         "3": {
             "name": "Claude Desktop",
             "key": "claude",
+            "root_key": "mcpServers",
             "path": (
                 appdata / "Claude" / "claude_desktop_config.json"
                 if sys.platform == "win32"
@@ -60,14 +63,40 @@ def get_agent_configs():
         "4": {
             "name": "Windsurf",
             "key": "windsurf",
+            "root_key": "mcpServers",
             "path": home / ".codeium" / "windsurf" / "mcp_config.json",
             "entry": {
                 "serverUrl": "http://localhost:8781/sse"
             }
+        },
+        "5": {
+            "name": "Claude Code (CLI Global)",
+            "key": "claude_code",
+            "root_key": "mcpServers",
+            "path": home / ".claude.json",
+            "entry": {
+                "type": "http",
+                "url": "http://localhost:8781/sse"
+            }
+        },
+        "6": {
+            "name": "OpenCode (Global)",
+            "key": "opencode",
+            "root_key": "mcp",
+            "path": (
+                home / ".config" / "opencode" / "opencode.json"
+                if (home / ".config" / "opencode").exists() or sys.platform != "win32"
+                else (appdata / "opencode" / "opencode.json" if (appdata / "opencode").exists() else home / ".config" / "opencode" / "opencode.json")
+            ),
+            "entry": {
+                "type": "remote",
+                "url": "http://localhost:8781/sse",
+                "enabled": True
+            }
         }
     }
 
-def inject_mcp(target_path: Path, entry: dict) -> bool:
+def inject_mcp(target_path: Path, entry: dict, root_key: str = "mcpServers") -> bool:
     try:
         target_path.parent.mkdir(parents=True, exist_ok=True)
         data = {}
@@ -78,10 +107,10 @@ def inject_mcp(target_path: Path, entry: dict) -> bool:
             except Exception:
                 data = {}
 
-        if "mcpServers" not in data or not isinstance(data["mcpServers"], dict):
-            data["mcpServers"] = {}
+        if root_key not in data or not isinstance(data[root_key], dict):
+            data[root_key] = {}
 
-        data["mcpServers"]["nexonotes"] = entry
+        data[root_key]["nexonotes"] = entry
 
         with open(target_path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
@@ -99,13 +128,14 @@ def cmd_mcp_list():
     for idx, c in configs.items():
         p = c["path"]
         name = c["name"]
+        root_key = c.get("root_key", "mcpServers")
         configured = False
 
         if p.exists() and p.stat().st_size > 0:
             try:
                 with open(p, "r", encoding="utf-8") as f:
                     data = json.load(f)
-                    servers = data.get("mcpServers", {})
+                    servers = data.get(root_key, {})
                     if "nexonotes" in servers:
                         configured = True
             except Exception:
@@ -127,10 +157,11 @@ def cmd_mcp_auto():
 
     for k, c in configs.items():
         print(f"  [{k}] {c['name']}")
-    print(f"  [5] Todos los agentes anteriores")
+    all_option = str(len(configs) + 1)
+    print(f"  [{all_option}] Todos los agentes anteriores")
     print(f"  [0] Salir\n")
 
-    choice = input("Selecciona una opción [1-5]: ").strip()
+    choice = input(f"Selecciona una opción [1-{all_option}]: ").strip()
 
     if choice == "0":
         print("Operación cancelada.")
@@ -139,7 +170,7 @@ def cmd_mcp_auto():
     targets = []
     if choice in configs:
         targets.append(configs[choice])
-    elif choice == "5":
+    elif choice == all_option:
         targets.extend(configs.values())
     else:
         print(f"{RED}Opción inválida.{RESET}")
@@ -147,7 +178,7 @@ def cmd_mcp_auto():
 
     print()
     for t in targets:
-        success = inject_mcp(t["path"], t["entry"])
+        success = inject_mcp(t["path"], t["entry"], root_key=t.get("root_key", "mcpServers"))
         if success:
             print(f"{GREEN}[OK]{RESET} {BOLD}{t['name']}{RESET} configurado con éxito:")
             print(f"     -> {t['path']}")
