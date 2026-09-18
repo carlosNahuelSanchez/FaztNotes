@@ -755,11 +755,18 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
             folders={folders}
             selectedNoteId={selectedNote?.id || null}
             selectedFolder={selectedFolder}
-            onSelectFolder={(folder) => setSelectedFolder(folder)}
+            onSelectFolder={(folder) => {
+              setSelectedFolder(folder);
+              setSelectedNote(null);
+            }}
             onSelectNote={(note) => {
-              setSelectedNote(note);
-              setIsEditing(false);
-              setSystemError(note.embedding_error || null);
+              if (note) {
+                setSelectedNote(note);
+                setIsEditing(false);
+                setSystemError(note.embedding_error || null);
+              } else {
+                setSelectedNote(null);
+              }
             }}
             onDeleteNote={(id, title) => setDeleteConfirm({ id, title })}
             onDeleteFolder={(folder) => setDeleteFolderConfirm(folder)}

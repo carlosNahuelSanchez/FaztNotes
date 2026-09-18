@@ -82,6 +82,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
   const [renameNoteTitle, setRenameNoteTitle] = useState<string>('');
   const [renamingFolderPath, setRenamingFolderPath] = useState<string | null>(null);
   const [renameFolderName, setRenameFolderName] = useState<string>('');
+  const [lastSelectedType, setLastSelectedType] = useState<'note' | 'folder' | null>(null);
   const [dragOverFolder, setDragOverFolder] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [searchTerm, setSearchTerm] = useState('');
@@ -123,15 +124,24 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
           target.isContentEditable
         );
         if (!isInput) {
-          if (selectedNoteId) {
+          if (lastSelectedType === 'folder' && selectedFolder) {
+            e.preventDefault();
+            startRenameFolder(selectedFolder);
+          } else if (lastSelectedType === 'note' && selectedNoteId) {
             const found = notes.find((n) => n.id === selectedNoteId);
             if (found) {
               e.preventDefault();
               startRenameNote(found);
             }
-          } else if (selectedFolder) {
+          } else if (selectedFolder && !selectedNoteId) {
             e.preventDefault();
             startRenameFolder(selectedFolder);
+          } else if (selectedNoteId) {
+            const found = notes.find((n) => n.id === selectedNoteId);
+            if (found) {
+              e.preventDefault();
+              startRenameNote(found);
+            }
           }
         }
       }
@@ -385,6 +395,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
           e.dataTransfer.effectAllowed = 'move';
         }}
         onClick={() => {
+          setLastSelectedType('note');
           onSelectNote(note);
           if (onSelectFolder) onSelectFolder(note.folder || null);
         }}
@@ -570,6 +581,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
           onDrop={(e) => handleDrop(e, node.fullPath)}
           onClick={(e) => {
             toggleFolder(node.fullPath, e);
+            setLastSelectedType('folder');
             if (onSelectFolder) onSelectFolder(node.fullPath);
           }}
           style={{ paddingLeft: `${depth * 14 + 6}px` }}
@@ -892,6 +904,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
       <div
         onClick={(e) => {
           if (e.target === e.currentTarget) {
+            setLastSelectedType(null);
             if (onSelectFolder) onSelectFolder(null);
             if (onSelectNote) onSelectNote(null as any);
             setActiveMenuFolder(null);
