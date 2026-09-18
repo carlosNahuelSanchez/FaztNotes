@@ -271,7 +271,9 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onDataChanged }) => 
   };
 
   const handleImportFile = async (file: File, folderTarget?: string | null) => {
-    setStatusMessage(t.importingFile, 'loading');
+    const isMdFile = file.name.match(/\.(md|markdown|txt)$/i);
+    const loadingMsg = isMdFile ? (t.importingMdFile || 'IMPORTANDO ARCHIVO...') : t.importingFile;
+    setStatusMessage(loadingMsg, 'loading');
     setSystemError(null);
     setImportWarnings([]);
     try {
