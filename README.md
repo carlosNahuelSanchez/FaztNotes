@@ -269,6 +269,6 @@ Se permite el uso, modificación, distribución y uso comercial, siempre respeta
 
 <div align="center">
 
-Hecho por el equipo de **[Nexus Studio](https://www.instagram.com/nexus.studio.dev/)**
+Hecho por el equipo de **[Nexus Studio](https://nexus-studio-dev.netlify.app/)**
 
 </div>
